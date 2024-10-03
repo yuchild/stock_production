@@ -38,7 +38,7 @@ eastern_time = datetime.now(eastern)
 time_stamp = eastern_time.strftime('%Y-%m-%d %H:%M:%S')
 
 # Display the current time
-st.write(f"Current Time (EST): {selected_period_option}")
+st.write(f"Current Time (EST): {time_stamp}")
 
 stock = yf.Ticker(symbol)
 
