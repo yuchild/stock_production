@@ -232,11 +232,11 @@ def model(symbol, interval):
     
     # Define your models
     models = {
-        'XGBoost': XGBClassifier(random_state=42, n_jobs=-1, learning_rate=0.1, max_depth=3, n_estimators=200),
-        'RandomForest': RandomForestClassifier(random_state=42, n_jobs=-1, max_depth=10, min_samples_split=13, n_estimators=10),
-        'GradientBoosting': GradientBoostingClassifier(random_state=42, learning_rate=0.01, max_depth=5, n_estimators=100, validation_fraction=0.05, n_iter_no_change=7),
+        'XGBoost': XGBClassifier(random_state=42, n_jobs=-1, learning_rate=0.06, max_depth=4, n_estimators=175),
+        'RandomForest': RandomForestClassifier(random_state=42, n_jobs=-1, max_depth=12, min_samples_split=9, n_estimators=200),
+        'GradientBoosting': GradientBoostingClassifier(random_state=42, learning_rate=0.04, max_depth=5, n_estimators=163, validation_fraction=0.07, n_iter_no_change=11),
         # 'LightGBM': LGBMClassifier(random_state=42,force_col_wise=True),
-        'KNN': KNeighborsClassifier(n_neighbors=5, p=1,weights='uniform')
+        'KNN': KNeighborsClassifier(n_neighbors=8, p=1, weights='uniform')
     }
 
     
