@@ -7,8 +7,11 @@ from datetime import datetime
 st.write("""
 # Next Time Frame Prediction App
 """)
+# Text input
+symbol = st.text_input("Enter your stock symbol in caps:").upper()
 
-symbol = 'GOOG'
+# Display the selected option
+st.write(f"You selected: {symbol}")
 
 yf_obj = yf.Ticker(symbol)
 
