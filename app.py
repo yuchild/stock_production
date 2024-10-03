@@ -42,8 +42,8 @@ st.write(f"Current Time (EST): {selected_period_option}")
 
 stock = yf.Ticker(symbol)
 
-stock_df = stock.history(interval=interval,
-                         period=period,
+stock_df = stock.history(interval=selected_interval_option,
+                         period=selected_period_option,
                          auto_adjust=False,
                          prepost=True, # include aftermarket hours
                         )
