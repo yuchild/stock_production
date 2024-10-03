@@ -79,8 +79,8 @@ def zscore(x, mu, stdev):
 # direction calculation:
 def direction(pctc, mean, stdev):
     
-    pct_pos = mean + 0.43073 / 2.59 * stdev
-    pct_neg = mean - 0.43073 / 2.59 * stdev
+    pct_pos = mean + 0.43073 / 2.25 * stdev
+    pct_neg = mean - 0.43073 / 2.25 * stdev
     if pctc >= pct_pos:
         return 1
     elif pctc <= pct_neg:
@@ -313,26 +313,6 @@ def make_prediction(models, curr_prediction, feature_names):
         prediction_probas[model_name] = model.predict_proba(curr_prediction_df)
     
     return predictions, prediction_probas
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
