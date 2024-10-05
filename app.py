@@ -5,6 +5,11 @@ import pandas as pd
 from datetime import datetime
 import pytz
 
+from src import functions as f
+
+%load_ext autoreload
+%autoreload 2
+
 st.write("""
 # Next Time Frame Prediction App
 """)

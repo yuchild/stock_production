@@ -17,14 +17,18 @@ from xgboost import XGBClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
-from lightgbm import LGBMClassifier
+# from sklearn.svm import SVC
+# from lightgbm import LGBMClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 
 from sklearn.model_selection import cross_val_predict
 
+from datetime import datetime
+import pytz
+
+import pprint
 
 def download(symbol, interval, period):
     stock = Ticker(symbol)
@@ -88,6 +92,13 @@ def direction(pctc, mean, stdev):
     else:
         return 0
 
+# compute kelly criterion
+def kelly_c(p, l=1, g=2): 
+    return p / l - (1 - p) / g
+
+#################################
+# functions for modeling output #
+#################################
 
 def transform(symbol, interval, period):
     
@@ -206,8 +217,8 @@ def model(symbol, interval):
     y = data['direction']
     
     # Print column names to check for issues
-    print("Columns in X before preprocessing:")
-    print(X.columns)
+    # print("Columns in X before preprocessing:")
+    # print(X.columns)
     
     # Remove duplicate columns
     X = X.loc[:, ~X.columns.duplicated()]
@@ -249,6 +260,8 @@ def model(symbol, interval):
     #     X_validation_dfs = {}
     #     y_validation_series = {}
     models = {}
+    classification_reports = {}
+    
     
     # Create a function to get the column names after transformation
     def get_feature_names_out(column_transformer):
@@ -293,10 +306,12 @@ def model(symbol, interval):
 
 
         # Evaluate the model
-        print(f"Model: {model.__class__.__name__}")
-        print(classification_report(y_test, y_pred, zero_division=0))
+        # print(f"Model: {model.__class__.__name__}")
+        # print(classification_report(y_test, y_pred, zero_division=0))
+        
+        classification_reports[model.__class__.__name__] = classification_report(y_test, y_pred, zero_division=0, output_dict=True)
     
-    return curr_prediction, models, feature_names
+    return curr_prediction, models, feature_names, classification_reports
 
 
 def make_prediction(models, curr_prediction, feature_names):
@@ -315,9 +330,39 @@ def make_prediction(models, curr_prediction, feature_names):
     return predictions, prediction_probas
 
 
+def predictions_summary(predictions, prediction_probas):
+    return pd.DataFrame({'model': predictions.keys(),
+                         'prediction': predictions.values(),
+                         'prob_no_change': np.array(list(prediction_probas.values())).T[0][0],
+                         'prob_up': np.array(list(prediction_probas.values())).T[1][0],
+                         'prob_down': np.array(list(prediction_probas.values())).T[2][0],
+                         'kelly_criterion_1_2': kelly_c(np.max(np.array(list(prediction_probas.values())).T, axis=0))[0],
+                        }
+                       )
 
+def dl_tf_pd(symbol, interval, period, skip_dl=False):
+    # Define Eastern Time Zone
+    eastern = pytz.timezone('US/Eastern')
 
+    # Get current time in Eastern Time Zone
+    eastern_time = datetime.now(eastern)
 
+    # Format the time to include hour, minute, and seconds
+    time_stamp = eastern_time.strftime('%Y-%m-%d %H:%M:%S')
+
+    print(f'{time_stamp}\n')
+    
+    if not skip_dl:
+        download(symbol, interval, period)
+        transform(symbol, interval, period)
+        curr_prediction, models, feature_names, _ = model(symbol, interval)
+        predictions, prediction_probas = make_prediction(models, curr_prediction, feature_names)
+        return predictions_summary(predictions, prediction_probas)
+    else:
+        transform(symbol, interval, period)
+        curr_prediction, models, feature_names, _ = model(symbol, interval)
+        predictions, prediction_probas = make_prediction(models, curr_prediction, feature_names)
+        return predictions_summary(predictions, prediction_probas)
 
 
 

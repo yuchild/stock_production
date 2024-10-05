@@ -5,6 +5,7 @@ lightgbm==4.5.0
 matplotlib==3.9.2
 numpy==2.1.1
 pandas==2.2.2
+pprintpp==0.4.0
 pykalman==0.9.7
 pytz==2024.2
 scikit-learn==1.5.2
