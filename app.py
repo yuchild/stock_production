@@ -7,7 +7,7 @@ from src.functions import dl_tf_pd, load
 
 # Container 1
 with st.container(): 
-    col1, col2 = st.columns([0.5,2])
+    col1, col2 = st.columns([1,2])
 
     col1.markdown("""
     ### Next Time Stock Interval Time Frame Prediction App
