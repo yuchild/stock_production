@@ -245,7 +245,7 @@ def model(symbol, interval):
     models = {
         'XGBoost': XGBClassifier(random_state=42, n_jobs=-1, learning_rate=0.06, max_depth=4, n_estimators=175),
         'RandomForest': RandomForestClassifier(random_state=42, n_jobs=-1, max_depth=12, min_samples_split=9, n_estimators=200),
-        'GradientBoosting': GradientBoostingClassifier(random_state=42, learning_rate=0.04, max_depth=5, n_estimators=163, validation_fraction=0.07, n_iter_no_change=11),
+        'GradientBoosting': GradientBoostingClassifier(random_state=42, learning_rate=0.11, max_depth=5, n_estimators=83, validation_fraction=0.09, n_iter_no_change=17,subsample=0.8,max_features='sqrt'),
         # 'LightGBM': LGBMClassifier(random_state=42,force_col_wise=True),
         'KNN': KNeighborsClassifier(n_neighbors=8, p=1, weights='uniform')
     }
