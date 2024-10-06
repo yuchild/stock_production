@@ -83,8 +83,8 @@ def zscore(x, mu, stdev):
 # direction calculation:
 def direction(pctc, mean, stdev):
     
-    pct_pos = mean + 0.43073 / 2.71 * stdev
-    pct_neg = mean - 0.43073 / 2.81 * stdev
+    pct_pos = mean + 0.43073 / 2.17 * stdev
+    pct_neg = mean - 0.43073 / 2.17 * stdev
     if pctc >= pct_pos:
         return 1
     elif pctc <= pct_neg:
@@ -93,7 +93,7 @@ def direction(pctc, mean, stdev):
         return 0
 
 # compute kelly criterion
-def kelly_c(p, l=1, g=2): 
+def kelly_c(p, l=1, g=2.5): 
     return p / l - (1 - p) / g
 
 #################################
@@ -361,10 +361,10 @@ def predictions_summary(predictions, prediction_probas, classification_reports):
         
     return pd.DataFrame({'model': predictions.keys(),
                          'prediction': prediction_str,
+                         'kelly_1:2.5': kelly_c(np.max(np.array(list(prediction_probas.values())).T, axis=0))[0],
                          'prob_up': np.array(list(prediction_probas.values())).T[1][0],
                          'prob_static': np.array(list(prediction_probas.values())).T[0][0],
                          'prob_down': np.array(list(prediction_probas.values())).T[2][0],
-                         'kelly_1_2': kelly_c(np.max(np.array(list(prediction_probas.values())).T, axis=0))[0],
                          'precision': precision,
                          'recall': recall,
                          'f1': f1,
