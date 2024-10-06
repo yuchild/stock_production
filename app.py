@@ -7,7 +7,7 @@ from src.functions import dl_tf_pd, load
 
 col1, col2, col3 = st.columns([1,2,1])
 
-co11.markdown("""
+col1.markdown("""
 ## Next Time Stock Interval Time Frame Prediction App
 """)
 # Text input
@@ -32,10 +32,10 @@ col2.write(f"You selected period: {selected_period_option}")
 
 # Run download, transform, and modeling
 time_stamp, summary_table = dl_tf_pd(symbol, 
-                                       selected_interval_option, 
-                                       selected_period_option, 
-                                       skip_dl=False,
-                                      )
+                                     selected_interval_option, 
+                                     selected_period_option, 
+                                     skip_dl=False,
+                                    )
 
 # Display the current time
 col1.write(f"Current Time (EST): {time_stamp}")
