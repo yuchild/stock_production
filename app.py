@@ -2,9 +2,6 @@ import yfinance as yf
 import streamlit as st
 import pandas as pd
 
-from datetime import datetime
-import pytz
-
 from src import functions as f
 
 
@@ -31,26 +28,24 @@ selected_period_option = st.selectbox("Choose an period option:", period_options
 # Display the selected period option
 st.write(f"You selected interval: {selected_period_option}")
 
-# Define Eastern Time Zone
-eastern = pytz.timezone('US/Eastern')
-
-# Get current time in Eastern Time Zone
-eastern_time = datetime.now(eastern)
-
-# Format the time to include hour, minute, and seconds
-time_stamp = eastern_time.strftime('%Y-%m-%d %H:%M:%S')
+# Run download, transform, and modeling
+time_stamp, summary_table = f.dl_tf_pd(symbol, 
+                                       selected_interval_option, 
+                                       selected_period_option, 
+                                       skip_dl=False,
+                                      )
 
 # Display the current time
 st.write(f"Current Time (EST): {time_stamp}")
 
-stock = yf.Ticker(symbol)
+# Display results summary table
+st.table(summary_table)
 
-stock_df = stock.history(interval=selected_interval_option,
-                         period=selected_period_option,
-                         auto_adjust=False,
-                         prepost=True, # include aftermarket hours
-                        )
+# Load stock dataframe
+stock_df = load(symbol, selected_interval_option)
 
-
+# display line chart of Close values
 st.line_chart(stock_df.Close)
+
+# display line chart of Volume values
 st.line_chart(stock_df.Volume)

@@ -330,13 +330,45 @@ def make_prediction(models, curr_prediction, feature_names):
     return predictions, prediction_probas
 
 
-def predictions_summary(predictions, prediction_probas):
+def predictions_summary(predictions, prediction_probas, classification_reports):
+    model_map = {'XGBoost':'XGBClassifier', 
+             'RandomForest':'RandomForestClassifier', 
+             'GradientBoosting':'GradientBoostingClassifier', 
+             'KNN':'KNeighborsClassifier',
+            }
+
+    prediction_map = {0: 'static',
+                      1: 'up',
+                      2: 'down',
+                     }
+    
+    prediction_str = []
+    precision = []
+    recall = []
+    f1 = []
+    support = []
+
+    for model, prediction in predictions.items():
+        prediction_str.append(prediction_map[prediction])
+        precision.append(classification_reports[model_map[model]][str(prediction)]['precision'])
+        recall.append(classification_reports[model_map[model]][str(prediction)]['recall'])
+        f1.append(classification_reports[model_map[model]][str(prediction)]['f1-score'])
+        support.append([classification_reports[model_map[model]]['1']['support'],
+                        classification_reports[model_map[model]]['0']['support'],
+                        classification_reports[model_map[model]]['2']['support'],
+                       ]
+                      )
+        
     return pd.DataFrame({'model': predictions.keys(),
-                         'prediction': predictions.values(),
-                         'prob_no_change': np.array(list(prediction_probas.values())).T[0][0],
+                         'prediction': prediction_str,
                          'prob_up': np.array(list(prediction_probas.values())).T[1][0],
+                         'prob_static': np.array(list(prediction_probas.values())).T[0][0],
                          'prob_down': np.array(list(prediction_probas.values())).T[2][0],
-                         'kelly_criterion_1_2': kelly_c(np.max(np.array(list(prediction_probas.values())).T, axis=0))[0],
+                         'kelly_1_2': kelly_c(np.max(np.array(list(prediction_probas.values())).T, axis=0))[0],
+                         'precision': precision,
+                         'recall': recall,
+                         'f1': f1,
+                         'support': support,
                         }
                        )
 
@@ -350,19 +382,19 @@ def dl_tf_pd(symbol, interval, period, skip_dl=False):
     # Format the time to include hour, minute, and seconds
     time_stamp = eastern_time.strftime('%Y-%m-%d %H:%M:%S')
 
-    print(f'{time_stamp}\n')
+    # print(f'{time_stamp}\n')
     
     if not skip_dl:
         download(symbol, interval, period)
         transform(symbol, interval, period)
-        curr_prediction, models, feature_names, _ = model(symbol, interval)
+        curr_prediction, models, feature_names, classification_reports = model(symbol, interval)
         predictions, prediction_probas = make_prediction(models, curr_prediction, feature_names)
-        return predictions_summary(predictions, prediction_probas)
+        return time_stamp, predictions_summary(predictions, prediction_probas, classification_reports)
     else:
         transform(symbol, interval, period)
-        curr_prediction, models, feature_names, _ = model(symbol, interval)
+        curr_prediction, models, feature_names, classification_reports = model(symbol, interval)
         predictions, prediction_probas = make_prediction(models, curr_prediction, feature_names)
-        return predictions_summary(predictions, prediction_probas)
+        return time_stamp, predictions_summary(predictions, prediction_probas, classification_reports)
 
 
 
