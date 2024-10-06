@@ -25,7 +25,7 @@ period_options = ['1mo', '3mo','1y', 'max']
 selected_period_option = st.selectbox("Choose an period option:", period_options)
 
 # Display the selected period option
-st.write(f"You selected interval: {selected_period_option}")
+st.write(f"You selected period: {selected_period_option}")
 
 # Run download, transform, and modeling
 time_stamp, summary_table = dl_tf_pd(symbol, 
