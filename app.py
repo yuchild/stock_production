@@ -49,9 +49,11 @@ with st.container():
     st.write(f"Current Time (EST): {time_stamp}\n")
 
     # Display results summary table
+    col_headers = summary_table.model.tolist()
     summary_table = summary_table.round(6)
-    summary_table_transposed = summary_table.T
-    st.write(summary_table_transposed.to_string(header=False))
+    summary_table_transposed = summary_table.T.iloc[1:]
+    summary_table_transposed.columns = col_headers
+    st.table(summary_table_transposed)
     
     
 # Container 4
