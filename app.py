@@ -47,10 +47,10 @@ col2.table(summary_table)
 stock_df = load(symbol, selected_interval_option)
 
 # display line chart of Close values
-col3.line_chart(stock_df.adj_close.iloc[-200])
+col3.line_chart(stock_df.adj_close.iloc[-200:])
 
 # display line chart of Volume values
-col3.line_chart(stock_df.volume.iloc[-200])
+col3.line_chart(stock_df.volume.iloc[-200:])
 
 
 
