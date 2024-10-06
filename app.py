@@ -25,7 +25,7 @@ col2.write(f"You selected interval: {selected_interval_option}")
 
 # Dropdown menu for period option
 period_options = ['1mo', '3mo','1y', 'max']
-selected_period_option = Col1.selectbox("Choose an period option:", period_options, index=1)
+selected_period_option = Col1.selectbox("Choose an period option:", period_options, index=0)
 
 # Display the selected period option
 col2.write(f"You selected period: {selected_period_option}")
