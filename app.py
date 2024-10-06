@@ -52,7 +52,7 @@ with st.container():
         yaxis_title='Value',
         xaxis_rangeslider_visible=True
     )
-    col2.plotly_chart(plotly_fig)
+    col2.plotly_chart(fig)
 
     # display line chart of Volume values
     col2.write(f'{symbol} Volume')
@@ -62,7 +62,7 @@ with st.container():
         yaxis_title='Value',
         xaxis_rangeslider_visible=True
     )
-    col2.plotly_chart(plotly_fig)
+    col2.plotly_chart(fig)
 
 # Container 2 
 with st.container():
