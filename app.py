@@ -42,14 +42,14 @@ with st.container():
     stock_df = load(symbol, selected_interval_option).iloc[-200:]
 
     # Reset the index to turn 'DatetimeIndex' from index to a 'date' column
-    stock_df = stock_df.reset_index().rename(columns={'index': 'date'})
+    stock_df = stock_df.reset_index().rename(columns={'Datetime': 'date'})
     
     # display line chart of Close values
     col2.write(f'{symbol} Price, last 200 intervals')    
     fig = px.line(stock_df, x='date',  y='adj_close')
     fig.update_layout(
         xaxis_title='Date',
-        yaxis_title='Value',
+        yaxis_title='Price',
         xaxis_rangeslider_visible=True
     )
     col2.plotly_chart(fig)
@@ -59,7 +59,7 @@ with st.container():
     fig = px.line(stock_df, x='date',  y='volume')
     fig.update_layout(
         xaxis_title='Date',
-        yaxis_title='Value',
+        yaxis_title='Volume',
         xaxis_rangeslider_visible=True
     )
     col2.plotly_chart(fig)
