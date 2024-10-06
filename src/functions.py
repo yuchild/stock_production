@@ -244,8 +244,8 @@ def model(symbol, interval):
     # Define your models
     models = {
         'XGBoost': XGBClassifier(random_state=42, n_jobs=-1, learning_rate=0.06, max_depth=4, n_estimators=175),
-        'RandomForest': RandomForestClassifier(random_state=42, n_jobs=-1, max_depth=12, min_samples_split=9, n_estimators=200),
         'GradientBoosting': GradientBoostingClassifier(random_state=42, learning_rate=0.11, max_depth=5, n_estimators=83, validation_fraction=0.09, n_iter_no_change=17,subsample=0.8,max_features='sqrt'),
+        'RandomForest': RandomForestClassifier(random_state=42, n_jobs=-1, max_depth=12, min_samples_split=9, n_estimators=200),
         # 'LightGBM': LGBMClassifier(random_state=42,force_col_wise=True),
         'KNN': KNeighborsClassifier(n_neighbors=8, p=1, weights='uniform')
     }
@@ -332,10 +332,10 @@ def make_prediction(models, curr_prediction, feature_names):
 
 def predictions_summary(predictions, prediction_probas, classification_reports):
     model_map = {'XGBoost':'XGBClassifier', 
-             'RandomForest':'RandomForestClassifier', 
-             'GradientBoosting':'GradientBoostingClassifier', 
-             'KNN':'KNeighborsClassifier',
-            }
+                 'GradientBoosting':'GradientBoostingClassifier', 
+                 'RandomForest':'RandomForestClassifier', 
+                 'KNN':'KNeighborsClassifier',
+                }
 
     prediction_map = {0: 'static',
                       1: 'up',
