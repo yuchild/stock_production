@@ -67,10 +67,10 @@ with st.container():
 # Container 2 
 with st.container():
     # Display the current time
-    col2.write(f"Current Time (EST): {time_stamp}")
+    st.write(f"Current Time (EST): {time_stamp}")
 
     # Display results summary table
-    col2.table(summary_table)
+    st.table(summary_table)
 
 
 
