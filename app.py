@@ -2,7 +2,7 @@ import yfinance as yf
 import streamlit as st
 import pandas as pd
 
-from src.functions import dl_tf_pd
+from src.functions import dl_tf_pd, load
 
 st.write("""
 # Next Time Frame Prediction App
