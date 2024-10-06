@@ -5,10 +5,10 @@ import pandas as pd
 from src.functions import dl_tf_pd, load
 
 
-col1, col2 = st.columns([0.25,2])
+col1, col2 = st.columns([0.5,2])
 
 col1.markdown("""
-## Next Time Stock Interval Time Frame Prediction App
+### Next Time Stock Interval Time Frame Prediction App
 """)
 # Text input
 symbol = col1.text_input("Enter your stock symbol in caps:", value='NVDA').upper()
