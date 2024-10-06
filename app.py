@@ -2,8 +2,7 @@ import yfinance as yf
 import streamlit as st
 import pandas as pd
 
-from src import functions as f
-
+from src.functions import dl_tf_pd
 
 st.write("""
 # Next Time Frame Prediction App
@@ -29,7 +28,7 @@ selected_period_option = st.selectbox("Choose an period option:", period_options
 st.write(f"You selected interval: {selected_period_option}")
 
 # Run download, transform, and modeling
-time_stamp, summary_table = f.dl_tf_pd(symbol, 
+time_stamp, summary_table = dl_tf_pd(symbol, 
                                        selected_interval_option, 
                                        selected_period_option, 
                                        skip_dl=False,
