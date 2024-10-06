@@ -6,7 +6,7 @@ import plotly.express as px
 from src.functions import dl_tf_pd, load
 
 # Container 1
-with st.container() 
+with st.container(): 
     col1, col2 = st.columns([0.5,2])
 
     col1.markdown("""
@@ -65,7 +65,7 @@ with st.container()
     col2.plotly_chart(plotly_fig)
 
 # Container 2 
-with st.container()
+with st.container():
     # Display the current time
     col2.write(f"Current Time (EST): {time_stamp}")
 
