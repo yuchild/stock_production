@@ -44,7 +44,7 @@ st.table(summary_table)
 stock_df = load(symbol, selected_interval_option)
 
 # display line chart of Close values
-st.line_chart(stock_df.Close)
+st.line_chart(stock_df.adj_close)
 
 # display line chart of Volume values
-st.line_chart(stock_df.Volume)
+st.line_chart(stock_df.volume)
