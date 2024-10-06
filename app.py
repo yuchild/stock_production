@@ -64,7 +64,9 @@ with st.container():
     stock_df = load(symbol, selected_interval_option).iloc[-200:]
 
     # Reset the index to turn 'DatetimeIndex' from index to a 'date' column
-    stock_df = stock_df.reset_index().rename(columns={'Date': 'date'})
+    stock_df = stock_df.reset_index().rename(columns={'Date': 'date',
+                                                      'Datetime': 'date',
+                                                     })
     
     # display line chart of Close values
     col1.write(f'{symbol} Price, last 200 intervals')    
