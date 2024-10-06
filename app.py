@@ -51,7 +51,7 @@ with st.container():
     # Display results summary table
     summary_table = summary_table.round(6)
     summary_table_transposed = summary_table.T
-    st.write(summary_table_transposed.to_string(header=False)
+    st.write(summary_table_transposed.to_string(header=False))
     
     
 # Container 4
