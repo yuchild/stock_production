@@ -45,9 +45,9 @@ with st.container():
     stock_df = stock_df.reset_index().rename(columns={'index': 'date'})
 
     # display line chart of Close values
-    col2.write(f'{symbol} Price, Last 200 Intervals')    
+    col2.write(f'{symbol} Price')    
     fig = px.line(stock_df, x='date',  y='adj_close')
-    plotly_fig.update_layout(
+    fig.update_layout(
         xaxis_title='Date',
         yaxis_title='Value',
         xaxis_rangeslider_visible=True
@@ -55,9 +55,9 @@ with st.container():
     col2.plotly_chart(plotly_fig)
 
     # display line chart of Volume values
-    col2.write(f'{symbol} Volume, Last 200 Intervals')
+    col2.write(f'{symbol} Volume')
     fig = px.line(stock_df, x='date',  y='volume')
-    plotly_fig.update_layout(
+    fig.update_layout(
         xaxis_title='Date',
         yaxis_title='Value',
         xaxis_rangeslider_visible=True
