@@ -41,9 +41,12 @@ with st.container():
     # Load stock dataframe
     stock_df = load(symbol, selected_interval_option).iloc[-200:]
 
+    # Reset the index to turn 'DatetimeIndex' from index to a 'date' column
+    stock_df = stock_df.reset_index().rename(columns={'index': 'date'})
+    
     # display line chart of Close values
     col2.write(f'{symbol} Price, last 200 intervals')    
-    fig = px.line(stock_df, x='Datetime',  y='adj_close')
+    fig = px.line(stock_df, x='date',  y='adj_close')
     fig.update_layout(
         xaxis_title='Date',
         yaxis_title='Value',
@@ -53,7 +56,7 @@ with st.container():
 
     # display line chart of Volume values
     col2.write(f'{symbol} Volume, last 200 intervals')
-    fig = px.line(stock_df, x='Datetime',  y='volume')
+    fig = px.line(stock_df, x='date',  y='volume')
     fig.update_layout(
         xaxis_title='Date',
         yaxis_title='Value',
