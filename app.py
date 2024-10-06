@@ -15,9 +15,9 @@ with st.container():
     
 # Container 2
 with st.container(): 
-    col1, col2, col3 = st.columns([1,2,3])
+    col1, col2, col3 = st.columns([1,1,1])
     # Text input
-    symbol = col1.text_input("Enter your stock symbol in caps:", value='NVDA').upper()
+    symbol = col1.text_input("Enter stock symbol in caps:", value='NVDA').upper()
 
     # Display the selected option
     col1.write(f"You selected stock: {symbol}\n")
@@ -50,12 +50,12 @@ with st.container():
     st.write(f"Current Time (EST): {time_stamp}\n")
 
     # Display results summary table
-    st.table(summary_table.T)
+    st.table(summary_table.T.iloc[1:])
     
     
 # Container 4
 with st.container():
-    col1, col2 = st.columns([1,2])
+    col1, col2 = st.columns([1,1])
     
     # Load stock dataframe
     stock_df = load(symbol, selected_interval_option).iloc[-200:]
