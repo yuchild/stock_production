@@ -8,7 +8,7 @@ from src.functions import dl_tf_pd, load
 # Container 1
 with st.container():
     st.markdown(f"""
-    ## Next Stock Interval Time Frame Prediction App
+    ### Next Stock Interval Time Frame Prediction App
     
     """)
     
@@ -50,9 +50,9 @@ with st.container():
     st.write(f"Current Time (EST): {time_stamp}\n")
 
     # Display results summary table
-    summary_table = summary_table.round(4)
-    summary_table_transposed = summary_table.T
-    st.table(summary_table_transposed.iloc[1:])
+    summary_table = summary_table.reset_index(drop=True).round(4)
+    summary_table_transposed = summary_table.T.style.hide(axis='columns')
+    st.table(summary_table_transposed)
     
     
 # Container 4
