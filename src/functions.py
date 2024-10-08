@@ -83,8 +83,9 @@ def zscore(x, mu, stdev):
 # direction calculation:
 def direction(pctc, mean, stdev):
     
-    pct_pos = mean + 0.43073 / 1.57 * stdev
-    pct_neg = mean - 0.43073 / 1.59 * stdev
+    pct_pos = mean + 0.43073 / 1.54 * stdev
+    pct_neg = mean - 0.43073 / 1.34 * stdev
+    
     if pctc >= pct_pos:
         return 1
     elif pctc <= pct_neg:
@@ -132,20 +133,29 @@ def transform(symbol, interval, period):
     #update 1 day table: candle parts %'s
     df[['pct_top_wick', 'pct_body', 'pct_bottom_wick']] = df.apply(lambda row: candle_parts_pcts(row['open'], row['close'], row['high'],  row['low']), axis=1, result_type='expand').copy()
 
-    #stdev of adjusted close
+    #stdev of candel parts
     df['top_stdev21'] = df['pct_top_wick'].rolling(window=21).std().copy() 
     df['body_stdev21'] = df['pct_body'].rolling(window=21).std().copy() 
     df['bottom_stdev21'] = df['pct_bottom_wick'].rolling(window=21).std().copy()
 
-    #mean of adjusted close
+    #mean of candel parts
     df['top_mu21'] = df['pct_top_wick'].rolling(window=21).mean().copy() 
     df['body_mu21'] = df['pct_body'].rolling(window=21).mean().copy() 
     df['bottom_mu21'] = df['pct_bottom_wick'].rolling(window=21).mean().copy()
 
-    #z-score of adjusted close
+    #z-score of candel parts
     df['top_z21'] = df.apply(lambda row: zscore(row['pct_top_wick'], row['top_mu21'], row['top_stdev21']), axis=1, result_type='expand').copy()
     df['body_z21'] = df.apply(lambda row: zscore(row['pct_body'], row['body_mu21'], row['body_stdev21']), axis=1, result_type='expand').copy()
     df['bottom_z21'] = df.apply(lambda row: zscore(row['pct_bottom_wick'], row['bottom_mu21'], row['bottom_stdev21']), axis=1, result_type='expand').copy()
+
+    #stdev of volume
+    df['vol_stdev21'] = df['volume'].rolling(window=21).std().copy() 
+    
+    #mean of candel parts
+    df['vol_mu21'] = df['volume'].rolling(window=21).mean().copy() 
+
+    #z-score of candel parts
+    df['vol_z21'] = df.apply(lambda row: zscore(row['volume'], row['vol_mu21'], row['vol_stdev21']), axis=1, result_type='expand').copy()
 
     #update 1 day table: % gap btwn current open relative to previous candle size
     df['pc'] = df['close'].shift(1).copy()
@@ -195,6 +205,7 @@ def transform(symbol, interval, period):
         'top_z21',
         'body_z21',
         'bottom_z21',
+        'vol_z21',
         'pct_gap_up_down',
         'ac_z5',
         'ac_z8',
