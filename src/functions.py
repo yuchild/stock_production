@@ -83,8 +83,8 @@ def zscore(x, mu, stdev):
 # direction calculation:
 def direction(pctc, mean, stdev):
     
-    pct_pos = mean + 0.43073 / 1.95 * stdev
-    pct_neg = mean - 0.43073 / 1.71 * stdev
+    pct_pos = mean + 0.43073 / 2.55 * stdev
+    pct_neg = mean - 0.43073 / 2.41 * stdev
     
     if pctc >= pct_pos:
         return 1
@@ -179,7 +179,7 @@ def transform(symbol, interval, period):
     df['ac_z13'] = df.apply(lambda row: zscore(row['adj_close'], row['ac_mu13'], row['ac_stdev13']), axis=1, result_type='expand').copy()
 
     #target column: direction: -1, 0, 1
-    df['adj_close_pctc'] = df['adj_close'].pct_change()
+    df['adj_close_pctc'] = df['adj_close'].pct_change(fill_method=None)
     mean = df['adj_close_pctc'].mean()
     stdev = df['adj_close_pctc'].std()
     df['direction'] = df.apply(lambda row: direction(row['adj_close_pctc'], mean, stdev), axis=1, result_type='expand').copy() 
