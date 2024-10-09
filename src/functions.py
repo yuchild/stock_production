@@ -191,8 +191,8 @@ def transform(symbol, interval, period):
   
     # categorical features
     categorical_features = ['day_of_month',
-                                'day_of_week',
-                                'hour_of_day']
+                            'day_of_week',
+                            'hour_of_day']
     
     # Change data types of categorical columns to 'category'
     for column in categorical_features:
@@ -301,7 +301,7 @@ def model(symbol, interval):
         X_transformed = X_transformed.iloc[:-1]
 
         # Now perform train_test_split on the transformed data
-        X_train, X_test, y_train, y_test = train_test_split(X_transformed, y[:-1], test_size=0.2, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(X_transformed, y[:-1], test_size=0.19, random_state=42, stratify=y[:-1])
 
         # cols
         cols = X_train.columns
