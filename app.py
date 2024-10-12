@@ -9,17 +9,18 @@ from src.functions import dl_tf_pd, load
 with st.container():
     st.markdown(f"""
     ### Next Stock Interval Time Frame Prediction App 
-    ###
-    #### Choose your stock and time interval for prediction and metrics in 
-    #### the next time interval
-    ####
-    #### For example, if 5m (5 minutes) is chosen at 10:14am EST, then the 
-    #### model will predict the movement direction of the stock in the 5m
-    #### time interval between 10:15am and 10:20am
-    ####
-    #### NOTE: the model predicts what the stock will likely do in the next
-    #### time interval: up, static (no change) down. It does not predict what
-    #### what the price will be
+    #####
+    ##### Choose your stock and time interval for prediction and metrics in 
+    ##### the next time interval
+    #####
+    ##### For example, if 5m (5 minutes) is chosen at 10:14am EST, then the 
+    ##### model will predict the movement direction of the stock in the 5m
+    ##### time interval between 10:15am and 10:20am
+    #####
+    ##### NOTE: the model predicts what the stock will likely do in the next
+    ##### time interval: up, static (no change) down. It does not predict 
+    ##### what the price will be
+    #####  
     """)
     
     
