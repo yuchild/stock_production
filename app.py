@@ -27,10 +27,6 @@ with st.container():
 
     # Display the selected interval option
     col2.write(f'You selected interval: {selected_interval_option}\n')
-
-    # Display the selected period option
-    col3.write(f'You selected period: {selected_period_option}')
-
     
 # Container 3
 with st.container():
