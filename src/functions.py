@@ -25,15 +25,27 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 from sklearn.model_selection import cross_val_predict
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 
 import pprint
 
-def download(symbol, interval, period):
+def download(symbol, interval):
+    interval_period_map = {'5m':58,
+                           '15m':58,
+                           '30m':58,
+                           '1h':360,
+                           '1d':1440,
+                           '1wk':5760,
+                          }
     stock = Ticker(symbol)
+    
+    today = datetime.today().date()
+    
     stock_df = stock.history(interval=interval,
-                             period=period,
+                             start=today - timedelta(days=interval_period_map[interval]),
+                             end=today,
+                             # period=period,
                              auto_adjust=False,
                              prepost=True, # include aftermarket hours
                             )
@@ -80,18 +92,19 @@ def zscore(x, mu, stdev):
     else:
         return (x - mu) / stdev
 
-# direction calculation:
-def direction(pctc, mean, stdev):
+# DEPRECATED
+# direction calculation: 
+# def direction(pctc, mean, stdev):
     
-    pct_pos = mean + 0.43073 / 9.99 * stdev
-    pct_neg = mean - 0.43073 / 8.05 * stdev
+#     pct_pos = mean + 0.43073 / 2 * stdev
+#     pct_neg = mean - 0.43073 / 2 * stdev
     
-    if pctc >= pct_pos:
-        return 1
-    elif pctc <= pct_neg:
-        return 2
-    else:
-        return 0
+#     if pctc >= pct_pos:
+#         return 1
+#     elif pctc <= pct_neg:
+#         return 2
+#     else:
+#         return 0
 
 # compute kelly criterion
 def kelly_c(p, l=1, g=2.5): 
@@ -101,13 +114,13 @@ def kelly_c(p, l=1, g=2.5):
 # functions for modeling output #
 #################################
 
-def transform(symbol, interval, period):
+def transform(symbol, interval):
     
     if load(symbol, interval).shape[0] > 0:
         df = load(symbol, interval)
         
     else:
-        download(symbol, interval, period)
+        download(symbol, interval)
         df = load(symbol,interval)
     
     # Kalman filtering (noise reduction algorithm) 
@@ -180,9 +193,10 @@ def transform(symbol, interval, period):
 
     #target column: direction: -1, 0, 1
     df['adj_close_pctc'] = df['adj_close'].pct_change(fill_method=None)
-    mean = df['adj_close_pctc'].mean()
-    stdev = df['adj_close_pctc'].std()
-    df['direction'] = df.apply(lambda row: direction(row['adj_close_pctc'], mean, stdev), axis=1, result_type='expand').copy() 
+    #     mean = df['adj_close_pctc'].mean()
+    #     stdev = df['adj_close_pctc'].std()
+    #     df['direction'] = df.apply(lambda row: direction(row['adj_close_pctc'], mean, stdev), axis=1, result_type='expand').copy() 
+    df['direction'] = pd.qcut(df['adj_close_pctc'], q=3, labels=[2, 0, 1])
 
     # day of month, week, hour of day
     df['day_of_month'] = df.index.day        # Day of the month (1-31)
@@ -383,7 +397,7 @@ def predictions_summary(predictions, prediction_probas, classification_reports):
                         }
                        )
 
-def dl_tf_pd(symbol, interval, period, skip_dl=False):
+def dl_tf_pd(symbol, interval, skip_dl=False):
     # Define Eastern Time Zone
     eastern = pytz.timezone('US/Eastern')
 
@@ -396,8 +410,8 @@ def dl_tf_pd(symbol, interval, period, skip_dl=False):
     # print(f'{time_stamp}\n')
     
     if not skip_dl:
-        download(symbol, interval, period)
-        transform(symbol, interval, period)
+        download(symbol, interval)
+        transform(symbol, interval)
         curr_prediction, models, feature_names, classification_reports = model(symbol, interval)
         predictions, prediction_probas = make_prediction(models, curr_prediction, feature_names)
         return time_stamp, predictions_summary(predictions, prediction_probas, classification_reports)
