@@ -83,8 +83,8 @@ def zscore(x, mu, stdev):
 # direction calculation:
 def direction(pctc, mean, stdev):
     
-    pct_pos = mean + 0.43073 / 2.55 * stdev
-    pct_neg = mean - 0.43073 / 2.41 * stdev
+    pct_pos = mean + 0.43073 / 9.99 * stdev
+    pct_neg = mean - 0.43073 / 8.05 * stdev
     
     if pctc >= pct_pos:
         return 1
