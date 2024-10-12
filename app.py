@@ -14,7 +14,7 @@ with st.container():
     
 # Container 2
 with st.container(): 
-    col1, col2, col3 = st.columns([1,1,1])
+    col1, col2 = st.columns([1,1])
     # Text input
     symbol = col1.text_input("Enter stock symbol in caps:", value='NVDA').upper()
 
@@ -28,10 +28,6 @@ with st.container():
     # Display the selected interval option
     col2.write(f'You selected interval: {selected_interval_option}\n')
 
-    # Dropdown menu for period option
-    period_options = ['1mo', '3mo','1y', 'max']
-    selected_period_option = col3.selectbox("Choose an period option:", period_options, index=0)
-
     # Display the selected period option
     col3.write(f'You selected period: {selected_period_option}')
 
@@ -41,7 +37,6 @@ with st.container():
     # Run download, transform, and modeling
     time_stamp, summary_table = dl_tf_pd(symbol, 
                                          selected_interval_option, 
-                                         selected_period_option, 
                                          skip_dl=False,
                                         )
 
