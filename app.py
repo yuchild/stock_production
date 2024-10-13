@@ -9,14 +9,16 @@ from src.functions import dl_tf_pd, load
 with st.container():
     st.markdown(f"""
 #### Next Stock Interval Time Frame Prediction App 
-TL;DR,
+TL;DR
 
-Choose your stock and time interval for predictions and metrics in the next time interval, current time is used for the most recent data sampling
-    
-For example, if 5m (5 minutes) is chosen say at 10:14am EST, then the model will predict the movement direction of the stock in the 5m time interval between 10:15am and 10:20am
-    
-NOTE: the model predicts what the stock will likely do in the next time interval: up, static (no change), or down. It does not predict what the price will be exactly just movement
-     
+Select your stock and time interval for predictions. The current time is used for the latest data sample, which is then passed through the model to predict the next interval's movement.
+
+For example, if you select a 5-minute interval at 10:14 AM EST, the model will predict the stock's movement between 10:15 AM and 10:20 AM.
+
+To maximize prediction accuracy, run the model as close to the end of the current interval as possible, using the most up-to-date information.
+
+Note: The model predicts stock movement (up, static, or down) in the next interval, not the exact price.
+
     """)
     
     
