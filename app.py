@@ -18,9 +18,8 @@ For example, if you select a 5-minute interval at 10:14 AM EST, the model will p
 To maximize prediction accuracy, run the model as close to the end of the current interval as possible, using the most up-to-date information.
 
 Note: The model predicts stock movement (up, static, or down) in the next interval, not the exact price. For optimal analysis, use a candlestick chart along with the ATR (Average True Range) indicator available on most charting platforms to estimate the potential movement range.
-
-
-
+  
+  
     """)
     
     
