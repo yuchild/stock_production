@@ -41,14 +41,16 @@ def download(symbol, interval):
     stock = Ticker(symbol)
     
     today = datetime.today().date()
+    start = today - timedelta(days=interval_period_map[interval])
     
     stock_df = stock.history(interval=interval,
-                             start=today - timedelta(days=interval_period_map[interval]),
-                             end=today,
+                             start=str(start),
+                             end=None,
                              # period=period,
                              auto_adjust=False,
                              prepost=True, # include aftermarket hours
                             )
+    
     stock_df.columns = stock_df.columns.str.lower().str.replace(' ', '_')
     stock_df.to_pickle(f'./data_raw/{symbol}_{interval}_df.pkl')
     
