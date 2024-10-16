@@ -4,6 +4,7 @@
 
 import pandas as pd
 import numpy as np
+from IPython.display import display
 from yfinance import Ticker
 from pykalman import KalmanFilter
 
@@ -424,7 +425,26 @@ def dl_tf_pd(symbol, interval, skip_dl=False):
         predictions, prediction_probas = make_prediction(models, curr_prediction, feature_names)
         return time_stamp, predictions_summary(predictions, prediction_probas, classification_reports)
 
+def predictions(symbol):
+    symbol = symbol.upper()
+    intervals = ['5m',
+                 '15m',
+                 '30m',
+                 '1h',
+                 '1d',
+                 '1wk',
+                 '1mo',
+                ]
 
+    for interval in intervals:
+
+        time_stamp, summary_table = dl_tf_pd(symbol, interval, skip_dl=False) # skip_dl=True on redo's
+        print(f'{symbol} {interval} Interval Timestamp: {time_stamp} ')
+        col_headers = summary_table.model.tolist()
+        col_headers
+        summary_table_transposed = summary_table.T.iloc[1:]
+        summary_table_transposed.columns = col_headers
+        display(summary_table_transposed)
 
 if __name__ == '__main__':
     ...
