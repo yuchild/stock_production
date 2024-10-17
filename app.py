@@ -33,7 +33,7 @@ with st.container():
     col1.write(f"You selected stock: {symbol}\n")
 
     # Dropdown menu for intervals
-    interval_options = ['5m', '15m','30m', '1h', '1d', '1wk']
+    interval_options = ['5m', '15m','30m', '1h', '1d', '1wk', '1mo',]
     selected_interval_option = col2.selectbox("Choose an interval option:", interval_options, index=0)
 
     # Display the selected interval option
