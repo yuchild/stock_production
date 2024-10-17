@@ -36,8 +36,8 @@ def download(symbol, interval):
                            '15m':58,
                            '30m':58,
                            '1h':720,
-                           '1d':5760,
-                           '1wk':5760,
+                           '1d':6780,
+                           '1wk':6780,
                            '1mo':15678,
                           }
     stock = Ticker(symbol)
