@@ -29,29 +29,32 @@ from sklearn.model_selection import cross_val_predict
 from datetime import datetime, timedelta
 import pytz
 
-import pprint
-
 def download(symbol, interval):
-    interval_period_map = {'5m':58,
-                           '15m':58,
-                           '30m':58,
-                           '1h':650,
-                           '1d':988,
-                           '1wk':1170,
-                           '1mo':2340,
-                          }
+    
     stock = Ticker(symbol)
     
-    today = datetime.today().date()
-    start = today - timedelta(days=interval_period_map[interval])
-    
-    stock_df = stock.history(interval=interval,
-                             start=str(start),
-                             end=None,
-                             # period=period,
-                             auto_adjust=False,
-                             prepost=True, # include aftermarket hours
-                            )
+    if interval in {'5m','15m','30m','1h',}:
+        interval_period_map = {'5m':59,
+                               '15m':59,
+                               '30m':59,
+                               '1h':729,
+                              }
+        today = datetime.today().date()
+        start = today - timedelta(days=interval_period_map[interval])
+        stock_df = stock.history(interval=interval,
+                                 start=str(start),
+                                 end=None,
+                                 # period=period,
+                                 auto_adjust=False,
+                                 prepost=True, # include aftermarket hours
+                                )
+        
+    else:
+        stock_df = stock.history(interval=interval,
+                         period='max',
+                         auto_adjust=False,
+                         prepost=True, # include aftermarket hours
+                        )
     
     stock_df.columns = stock_df.columns.str.lower().str.replace(' ', '_')
     stock_df.to_pickle(f'./data_raw/{symbol}_{interval}_df.pkl')
@@ -319,7 +322,7 @@ def model(symbol, interval):
         X_transformed = X_transformed.iloc[:-1]
 
         # Now perform train_test_split on the transformed data
-        X_train, X_test, y_train, y_test = train_test_split(X_transformed, y[:-1], test_size=0.19, random_state=42, stratify=y[:-1])
+        X_train, X_test, y_train, y_test = train_test_split(X_transformed, y[:-1], test_size=0.2, random_state=42, stratify=y[:-1])
 
         # cols
         cols = X_train.columns
