@@ -35,10 +35,10 @@ def download(symbol, interval):
     interval_period_map = {'5m':58,
                            '15m':58,
                            '30m':58,
-                           '1h':720,
-                           '1d':6780,
-                           '1wk':6780,
-                           '1mo':15678,
+                           '1h':650,
+                           '1d':988,
+                           '1wk':1170,
+                           '1mo':2340,
                           }
     stock = Ticker(symbol)
     
