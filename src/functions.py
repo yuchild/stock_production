@@ -11,7 +11,7 @@ from pykalman import KalmanFilter
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
-
+from sklearn.cluster import KMeans
 from sklearn.pipeline import Pipeline
 
 from xgboost import XGBClassifier
@@ -29,15 +29,19 @@ from sklearn.model_selection import cross_val_predict
 from datetime import datetime, timedelta
 import pytz
 
+################################################
+# functions for downloading and loading tables #
+################################################
+
 def download(symbol, interval):
     
     stock = Ticker(symbol)
     
     if interval in {'5m','15m','30m','1h',}:
-        interval_period_map = {'5m':59,
-                               '15m':59,
-                               '30m':59,
-                               '1h':729,
+        interval_period_map = {'5m':58,
+                               '15m':58,
+                               '30m':58,
+                               '1h':728,
                               }
         today = datetime.today().date()
         start = today - timedelta(days=interval_period_map[interval])
@@ -65,9 +69,9 @@ def load(symbol, interval):
 def load_model_df(symbol, interval):
     return pd.read_pickle(f'./data_transformed/{symbol}_{interval}_model_df.pkl')
 
-#########################################
-# functions for use to transform tables #
-#########################################
+###########################################
+# functions for use to transform features #
+###########################################
 
 # candle parts percentages
 def candle_parts_pcts(o, c, h, l):
@@ -114,8 +118,8 @@ def zscore(x, mu, stdev):
 #         return 0
 
 # compute kelly criterion
-def kelly_c(p, l=1, g=2.5): 
-    return p / l - (1 - p) / g
+def kelly_c(p, l=1, g=2.5):     
+    return list(map(lambda x:(x / l - (1 - x) / g), p))
 
 #################################
 # functions for modeling output #
@@ -182,28 +186,38 @@ def transform(symbol, interval):
     df['ph'] = df['high'].shift(1).copy()
     df['pl'] = df['low'].shift(1).copy()
     df['pct_gap_up_down'] = df.apply(lambda row: gap_up_down_pct(row['open'], row['pc'], row['ph'], row['pl']), axis=1, result_type='expand').copy()
+    
+    df['pct_gap_up_down_mu21'] = df['pct_gap_up_down'].rolling(window=21).mean().copy()
+    
+    df['pct_gap_up_down_stdev21'] = df['pct_gap_up_down'].rolling(window=21).std().copy()
+    
+    df['pct_gap_up_down_z21'] = df.apply(lambda row: zscore(row['pct_gap_up_down'], row['pct_gap_up_down_mu21'], row['pct_gap_up_down_stdev21']), axis=1, result_type='expand').copy()
 
     #stdev of adjusted close
     df['ac_stdev5'] = df['adj_close'].rolling(window=5).std().copy() 
     df['ac_stdev8'] = df['adj_close'].rolling(window=8).std().copy() 
     df['ac_stdev13'] = df['adj_close'].rolling(window=13).std().copy()
+    df['ac_stdev21'] = df['adj_close'].rolling(window=21).std().copy()
 
     #mean of adjusted close
     df['ac_mu5'] = df['adj_close'].rolling(window=5).mean().copy() 
     df['ac_mu8'] = df['adj_close'].rolling(window=8).mean().copy() 
     df['ac_mu13'] = df['adj_close'].rolling(window=13).mean().copy()
+    df['ac_mu21'] = df['adj_close'].rolling(window=21).mean().copy()
 
     #z-score of adjusted close
     df['ac_z5'] = df.apply(lambda row: zscore(row['adj_close'], row['ac_mu5'], row['ac_stdev5']), axis=1, result_type='expand').copy()
     df['ac_z8'] = df.apply(lambda row: zscore(row['adj_close'], row['ac_mu8'], row['ac_stdev8']), axis=1, result_type='expand').copy()
     df['ac_z13'] = df.apply(lambda row: zscore(row['adj_close'], row['ac_mu13'], row['ac_stdev13']), axis=1, result_type='expand').copy()
-
+    df['ac_z21'] = df.apply(lambda row: zscore(row['adj_close'], row['ac_mu21'], row['ac_stdev21']), axis=1, result_type='expand').copy()
+    
     #target column: direction: -1, 0, 1
     df['adj_close_pctc'] = df['adj_close'].pct_change(fill_method=None)
     #     mean = df['adj_close_pctc'].mean()
     #     stdev = df['adj_close_pctc'].std()
     #     df['direction'] = df.apply(lambda row: direction(row['adj_close_pctc'], mean, stdev), axis=1, result_type='expand').copy() 
     df['direction'] = pd.qcut(df['adj_close_pctc'], q=3, labels=[2, 0, 1])
+    df['direction'] = df['direction'].shift(-1).copy() # shift up to predict next time interval 
 
     # day of month, week, hour of day
     df['day_of_month'] = df.index.day        # Day of the month (1-31)
@@ -219,23 +233,32 @@ def transform(symbol, interval):
     for column in categorical_features:
         df[column] = df[column].astype('category')
     
+    # clustering... select columns ending with 'z##'
+    z_columns = ['ac_z5', 'ac_z8', 'ac_z13', 'ac_z21', 'top_z21', 'body_z21', 'bottom_z21', 'vol_z21', 'pct_gap_up_down_z21', 'kma_sma40_diff_z21']
+    data_z = df[z_columns].dropna() 
+    
+    optimal_k = 5  # Replace with the optimal number from the elbow plot
+    kmeans = KMeans(n_clusters=optimal_k, random_state=42)
+    data_z['cluster'] = kmeans.fit_predict(data_z)
+    
+    # Add the 'cluster' column back to the original DataFrame
+    df['cluster'] = data_z['cluster']
+    
     # save 1d file for model building
-    df[['top_z21', 
-        'body_z21', 
-        'bottom_z21',
-        'top_z21',
+    df[['top_z21',
         'body_z21',
         'bottom_z21',
         'vol_z21',
-        'pct_gap_up_down',
+        'pct_gap_up_down_z21',
         'ac_z5',
         'ac_z8',
         'ac_z13',
+        'ac_z21',
         'kma_sma40_diff_z21',
-        'adj_close',
         'day_of_month',
         'day_of_week',
         'hour_of_day',
+        'cluster',
         'direction',
        ]
       ].to_pickle(f'./data_transformed/{symbol}_{interval}_model_df.pkl')
@@ -256,7 +279,7 @@ def model(symbol, interval):
     X = X.loc[:, ~X.columns.duplicated()]
 
     # Check if categorical_features are present in X
-    categorical_features = ['day_of_month', 'day_of_week', 'hour_of_day']
+    categorical_features = ['day_of_month', 'day_of_week', 'hour_of_day', 'cluster',]
     missing_features = [col for col in categorical_features if col not in X.columns]
     if missing_features:
         print(f"Missing categorical features: {missing_features}")
@@ -323,19 +346,14 @@ def model(symbol, interval):
 
         # Now perform train_test_split on the transformed data
         X_train, X_test, y_train, y_test = train_test_split(X_transformed, y[:-1], test_size=0.2, random_state=42, stratify=y[:-1])
-
-        # cols
-        cols = X_train.columns
-                
-        # store model in models dictionary
-        models[model_name] = model
-        
         
         # Fit and evaluate the model
         model = pipeline.named_steps['classifier']
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
+        # store model in models dictionary
+        models[model_name] = model
 
         # Evaluate the model
         # print(f"Model: {model.__class__.__name__}")
@@ -393,7 +411,7 @@ def predictions_summary(predictions, prediction_probas, classification_reports):
         
     return pd.DataFrame({'model': predictions.keys(),
                          'prediction': prediction_str,
-                         'kelly_1:2.5': kelly_c(np.max(np.array(list(prediction_probas.values())).T, axis=0))[0],
+                         'kelly_1:2.5': kelly_c(precision), # kelly_c(np.max(np.array(list(prediction_probas.values())).T, axis=0))[0],
                          'prob_up': np.array(list(prediction_probas.values())).T[1][0],
                          'prob_static': np.array(list(prediction_probas.values())).T[0][0],
                          'prob_down': np.array(list(prediction_probas.values())).T[2][0],
