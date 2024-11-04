@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-from src.functions import dl_tf_pd, load
+from src.modules import dl_tf_pd, load
 
 # Container 1
 with st.container():

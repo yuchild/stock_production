@@ -237,7 +237,7 @@ def transform(symbol, interval):
     z_columns = ['ac_z5', 'ac_z8', 'ac_z13', 'ac_z21', 'top_z21', 'body_z21', 'bottom_z21', 'vol_z21', 'pct_gap_up_down_z21', 'kma_sma40_diff_z21']
     data_z = df[z_columns].dropna() 
     
-    optimal_k = 5  # Replace with the optimal number from the elbow plot
+    optimal_k = 2  # Replace with the optimal number from the elbow plot
     kmeans = KMeans(n_clusters=optimal_k, random_state=42)
     data_z['cluster'] = kmeans.fit_predict(data_z)
     
