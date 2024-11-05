@@ -146,40 +146,40 @@ def transform(symbol, interval):
     state_means, _ = kf.filter(df['adj_close'].values)
     state_means = pd.Series(state_means.flatten(), index=df.index)
     df['kma'] = state_means
-    df['sma40'] = df['adj_close'].rolling(window=40).mean().copy()
-    df['kma_sma40_diff'] = (df['kma'] - df['sma40']).copy()
-    df['kma_sma40_diff_stdev21'] = df['kma_sma40_diff'].rolling(window=21).std().copy()
-    df['kma_sma40_diff_mu21'] = df['kma_sma40_diff'].rolling(window=21).mean().copy()
+    df['sma17'] = df['adj_close'].rolling(window=17).mean().copy()
+    df['kma_sma17_diff'] = (df['kma'] - df['sma17']).copy()
+    df['kma_sma17_diff_stdev17'] = df['kma_sma17_diff'].rolling(window=17).std().copy()
+    df['kma_sma17_diff_mu17'] = df['kma_sma17_diff'].rolling(window=17).mean().copy()
 
-    # Calculate Kalman Filter vs SMA40 difference z-score
-    df['kma_sma40_diff_z21'] = df.apply(lambda row: zscore(row['kma_sma40_diff'], row['kma_sma40_diff_mu21'], row['kma_sma40_diff_stdev21']), axis=1, result_type='expand').copy()
+    # Calculate Kalman Filter vs SMA41 difference z-score
+    df['kma_sma17_diff_z17'] = df.apply(lambda row: zscore(row['kma_sma17_diff'], row['kma_sma17_diff_mu17'], row['kma_sma17_diff_stdev17']), axis=1, result_type='expand').copy()
 
     #update 1 day table: candle parts %'s
     df[['pct_top_wick', 'pct_body', 'pct_bottom_wick']] = df.apply(lambda row: candle_parts_pcts(row['open'], row['close'], row['high'],  row['low']), axis=1, result_type='expand').copy()
 
     #stdev of candel parts
-    df['top_stdev21'] = df['pct_top_wick'].rolling(window=21).std().copy() 
-    df['body_stdev21'] = df['pct_body'].rolling(window=21).std().copy() 
-    df['bottom_stdev21'] = df['pct_bottom_wick'].rolling(window=21).std().copy()
+    df['top_stdev17'] = df['pct_top_wick'].rolling(window=17).std().copy() 
+    df['body_stdev17'] = df['pct_body'].rolling(window=17).std().copy() 
+    df['bottom_stdev17'] = df['pct_bottom_wick'].rolling(window=17).std().copy()
 
     #mean of candel parts
-    df['top_mu21'] = df['pct_top_wick'].rolling(window=21).mean().copy() 
-    df['body_mu21'] = df['pct_body'].rolling(window=21).mean().copy() 
-    df['bottom_mu21'] = df['pct_bottom_wick'].rolling(window=21).mean().copy()
+    df['top_mu17'] = df['pct_top_wick'].rolling(window=17).mean().copy() 
+    df['body_mu17'] = df['pct_body'].rolling(window=17).mean().copy() 
+    df['bottom_mu17'] = df['pct_bottom_wick'].rolling(window=17).mean().copy()
 
     #z-score of candel parts
-    df['top_z21'] = df.apply(lambda row: zscore(row['pct_top_wick'], row['top_mu21'], row['top_stdev21']), axis=1, result_type='expand').copy()
-    df['body_z21'] = df.apply(lambda row: zscore(row['pct_body'], row['body_mu21'], row['body_stdev21']), axis=1, result_type='expand').copy()
-    df['bottom_z21'] = df.apply(lambda row: zscore(row['pct_bottom_wick'], row['bottom_mu21'], row['bottom_stdev21']), axis=1, result_type='expand').copy()
+    df['top_z17'] = df.apply(lambda row: zscore(row['pct_top_wick'], row['top_mu17'], row['top_stdev17']), axis=1, result_type='expand').copy()
+    df['body_z17'] = df.apply(lambda row: zscore(row['pct_body'], row['body_mu17'], row['body_stdev17']), axis=1, result_type='expand').copy()
+    df['bottom_z17'] = df.apply(lambda row: zscore(row['pct_bottom_wick'], row['bottom_mu17'], row['bottom_stdev17']), axis=1, result_type='expand').copy()
 
     #stdev of volume
-    df['vol_stdev21'] = df['volume'].rolling(window=21).std().copy() 
+    df['vol_stdev17'] = df['volume'].rolling(window=17).std().copy() 
     
     #mean of candel parts
-    df['vol_mu21'] = df['volume'].rolling(window=21).mean().copy() 
+    df['vol_mu17'] = df['volume'].rolling(window=17).mean().copy() 
 
     #z-score of candel parts
-    df['vol_z21'] = df.apply(lambda row: zscore(row['volume'], row['vol_mu21'], row['vol_stdev21']), axis=1, result_type='expand').copy()
+    df['vol_z17'] = df.apply(lambda row: zscore(row['volume'], row['vol_mu17'], row['vol_stdev17']), axis=1, result_type='expand').copy()
 
     #update 1 day table: % gap btwn current open relative to previous candle size
     df['pc'] = df['close'].shift(1).copy()
@@ -187,29 +187,29 @@ def transform(symbol, interval):
     df['pl'] = df['low'].shift(1).copy()
     df['pct_gap_up_down'] = df.apply(lambda row: gap_up_down_pct(row['open'], row['pc'], row['ph'], row['pl']), axis=1, result_type='expand').copy()
     
-    df['pct_gap_up_down_mu21'] = df['pct_gap_up_down'].rolling(window=21).mean().copy()
+    df['pct_gap_up_down_mu17'] = df['pct_gap_up_down'].rolling(window=17).mean().copy()
     
-    df['pct_gap_up_down_stdev21'] = df['pct_gap_up_down'].rolling(window=21).std().copy()
+    df['pct_gap_up_down_stdev17'] = df['pct_gap_up_down'].rolling(window=17).std().copy()
     
-    df['pct_gap_up_down_z21'] = df.apply(lambda row: zscore(row['pct_gap_up_down'], row['pct_gap_up_down_mu21'], row['pct_gap_up_down_stdev21']), axis=1, result_type='expand').copy()
+    df['pct_gap_up_down_z17'] = df.apply(lambda row: zscore(row['pct_gap_up_down'], row['pct_gap_up_down_mu17'], row['pct_gap_up_down_stdev17']), axis=1, result_type='expand').copy()
 
     #stdev of adjusted close
     df['ac_stdev5'] = df['adj_close'].rolling(window=5).std().copy() 
     df['ac_stdev8'] = df['adj_close'].rolling(window=8).std().copy() 
     df['ac_stdev13'] = df['adj_close'].rolling(window=13).std().copy()
-    df['ac_stdev21'] = df['adj_close'].rolling(window=21).std().copy()
+    df['ac_stdev17'] = df['adj_close'].rolling(window=17).std().copy()
 
     #mean of adjusted close
     df['ac_mu5'] = df['adj_close'].rolling(window=5).mean().copy() 
     df['ac_mu8'] = df['adj_close'].rolling(window=8).mean().copy() 
     df['ac_mu13'] = df['adj_close'].rolling(window=13).mean().copy()
-    df['ac_mu21'] = df['adj_close'].rolling(window=21).mean().copy()
+    df['ac_mu17'] = df['adj_close'].rolling(window=17).mean().copy()
 
     #z-score of adjusted close
     df['ac_z5'] = df.apply(lambda row: zscore(row['adj_close'], row['ac_mu5'], row['ac_stdev5']), axis=1, result_type='expand').copy()
     df['ac_z8'] = df.apply(lambda row: zscore(row['adj_close'], row['ac_mu8'], row['ac_stdev8']), axis=1, result_type='expand').copy()
     df['ac_z13'] = df.apply(lambda row: zscore(row['adj_close'], row['ac_mu13'], row['ac_stdev13']), axis=1, result_type='expand').copy()
-    df['ac_z21'] = df.apply(lambda row: zscore(row['adj_close'], row['ac_mu21'], row['ac_stdev21']), axis=1, result_type='expand').copy()
+    df['ac_z17'] = df.apply(lambda row: zscore(row['adj_close'], row['ac_mu17'], row['ac_stdev17']), axis=1, result_type='expand').copy()
     
     #target column: direction: -1, 0, 1
     df['adj_close_pctc'] = df['adj_close'].pct_change(fill_method=None)
@@ -234,7 +234,7 @@ def transform(symbol, interval):
         df[column] = df[column].astype('category')
     
     # clustering... select columns ending with 'z##'
-    z_columns = ['ac_z5', 'ac_z8', 'ac_z13', 'ac_z21', 'top_z21', 'body_z21', 'bottom_z21', 'vol_z21', 'pct_gap_up_down_z21', 'kma_sma40_diff_z21']
+    z_columns = ['ac_z5', 'ac_z8', 'ac_z13', 'ac_z17', 'top_z17', 'body_z17', 'bottom_z17', 'vol_z17', 'pct_gap_up_down_z17', 'kma_sma17_diff_z17']
     data_z = df[z_columns].dropna() 
     
     optimal_k = 2  # Replace with the optimal number from the elbow plot
@@ -245,16 +245,16 @@ def transform(symbol, interval):
     df['cluster'] = data_z['cluster']
     
     # save 1d file for model building
-    df[['top_z21',
-        'body_z21',
-        'bottom_z21',
-        'vol_z21',
-        'pct_gap_up_down_z21',
+    df[['top_z17',
+        'body_z17',
+        'bottom_z17',
+        'vol_z17',
+        'pct_gap_up_down_z17',
         'ac_z5',
         'ac_z8',
         'ac_z13',
-        'ac_z21',
-        'kma_sma40_diff_z21',
+        'ac_z17',
+        'kma_sma17_diff_z17',
         'day_of_month',
         'day_of_week',
         'hour_of_day',
