@@ -154,6 +154,13 @@ def transform(symbol, interval):
     # Calculate Kalman Filter vs SMA41 difference z-score
     df['kma_sma17_diff_z17'] = df.apply(lambda row: zscore(row['kma_sma17_diff'], row['kma_sma17_diff_mu17'], row['kma_sma17_diff_stdev17']), axis=1, result_type='expand').copy()
 
+    
+    
+    
+    
+    
+    
+    
     #update 1 day table: candle parts %'s
     df[['pct_top_wick', 'pct_body', 'pct_bottom_wick']] = df.apply(lambda row: candle_parts_pcts(row['open'], row['close'], row['high'],  row['low']), axis=1, result_type='expand').copy()
 
