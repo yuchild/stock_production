@@ -19,7 +19,7 @@ To maximize prediction accuracy, run the model as close to the end of the curren
 
 Note: The model predicts stock movement (up, static, or down) in the next interval, not the exact price. For optimal analysis, use a candlestick chart along with the ATR (Average True Range) indicator available on most charting platforms to estimate the potential movement range.
   
-  
+
     """)
     
     
@@ -33,7 +33,7 @@ with st.container():
     col1.write(f"You selected stock: {symbol}\n")
 
     # Dropdown menu for intervals
-    interval_options = ['5m', '15m','30m', '1h', '1d', '1wk', '1mo',]
+    interval_options = ['5m', '15m', '1h', '1d', '1wk', '1mo',]
     selected_interval_option = col2.selectbox("Choose an interval option:", interval_options, index=0)
 
     # Display the selected interval option

@@ -7,6 +7,7 @@ numpy==2.1.1
 pandas==2.2.2
 plotly==5.24.1
 pprintpp==0.4.0
+prophet==1.1.6
 pykalman==0.9.7
 pytz==2024.2
 scikit-learn==1.5.2
