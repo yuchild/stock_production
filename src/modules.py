@@ -139,7 +139,7 @@ def transform(symbol, interval):
         n_sma = 29
         n_z = 11
     else:
-        n_sma = 25
+        n_sma = 23
         n_z = 7
     
     # Kalman filtering (noise reduction algorithm) 
