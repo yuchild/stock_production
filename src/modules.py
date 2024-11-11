@@ -139,8 +139,8 @@ def transform(symbol, interval):
         n_sma = 29
         n_z = 11
     else:
-        n_sma = 26
-        n_z = 9
+        n_sma = 23
+        n_z = 11
     
     # Kalman filtering (noise reduction algorithm) 
     kf = KalmanFilter(transition_matrices = [1],
