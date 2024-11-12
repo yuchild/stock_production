@@ -135,12 +135,12 @@ def transform(symbol, interval):
         df = load(symbol,interval)
     
     # sma and z-score windows
-    if interval not in {'1d', '1wk', '1mo',}:
-        n_sma = 29
-        n_z = 11
+    if interval not in {'1d', '1mo',}:
+        n_sma = 21
+        n_z = 7
     else:
-        n_sma = 23
-        n_z = 11
+        n_sma = 37
+        n_z = 13
     
     # Kalman filtering (noise reduction algorithm) 
     kf = KalmanFilter(transition_matrices = [1],
