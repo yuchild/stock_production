@@ -26,6 +26,31 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 from sklearn.model_selection import cross_val_predict
 
+from prophet import Prophet
+
+import logging
+
+# Set logging level for cmdstanpy to WARNING to suppress INFO messages
+# logging.getLogger("cmdstanpy").setLevel(logging.WARNING)
+
+# Disable cmdstanpy logging
+logging.getLogger("cmdstanpy").setLevel(logging.CRITICAL)
+
+# from cmdstanpy import install_cmdstan
+# install_cmdstan()
+
+import os
+
+# Suppress cmdstanpy output
+os.environ["STAN_NUM_THREADS"] = "1"  # If using threading, limit to 1
+os.environ["CMDSTANPY_SILENT"] = "1"
+
+# Set the number of threads to use
+os.environ['STAN_BACKEND'] = 'CMDSTANPY'  # Ensure the correct backend
+os.environ['STAN_NUM_THREADS'] = '4'  # Number of cores
+
+
+
 from datetime import datetime, timedelta
 import pytz
 
@@ -139,8 +164,8 @@ def transform(symbol, interval):
         n_sma = 21
         n_z = 7
     else:
-        n_sma = 37
-        n_z = 13
+        n_sma = 23
+        n_z = 9
     
     # Kalman filtering (noise reduction algorithm) 
     kf = KalmanFilter(transition_matrices = [1],
@@ -231,6 +256,45 @@ def transform(symbol, interval):
     df['ac_z7'] = df.apply(lambda row: zscore(row['adj_close'], row['ac_mu7'], row['ac_stdev7']), axis=1, result_type='expand').copy()
     df['ac_z11'] = df.apply(lambda row: zscore(row['adj_close'], row['ac_mu11'], row['ac_stdev11']), axis=1, result_type='expand').copy()
     
+#     def next_prophet_prediction(window):
+#         # Ensure the window has enough data points
+#         if len(window) < n_sma:
+#             return np.nan  # Return NaN if window length is insufficient
+
+#         try:
+#             # Prepare window DataFrame for Prophet and remove timezone
+#             df_window = pd.DataFrame({
+#                 'ds': window.index.tz_localize(None), # Remove timezone
+#                 'y': window.values
+#             }).dropna(subset=['y']).copy()
+
+#             # Initialize and fit the model
+#             model = Prophet(n_changepoints=5,   # Reduce from default (25)
+#                             daily_seasonality=False, 
+#                             weekly_seasonality=True, 
+#                             seasonality_mode='additive',
+#                            )  
+#             model.fit(df_window)
+
+#             # Create a DataFrame for the next day forecast
+#             future = model.make_future_dataframe(periods=1)
+#             forecast = model.predict(future)
+
+#             # Return only the next day’s prediction
+#             return forecast['yhat'].iloc[-1]
+#         except Exception as e:
+#             print(f"Error in Prophet prediction: {e}")
+#             return np.nan  # Return NaN if there's an error in prediction
+    
+#     # Prophet next time period predictor
+#     df[f'next_pred{n_sma}'] = df['adj_close'].rolling(window=n_sma).apply(next_prophet_prediction)
+#     df[f'adj_next_pred{n_sma}_diff'] = (df['adj_close'] - df[f'next_pred{n_sma}']).copy()
+#     df[f'adj_next_pred{n_sma}_diff_mu{n_z}'] = df[f'adj_next_pred{n_sma}_diff'].rolling(window=n_z).mean()
+#     df[f'adj_next_pred{n_sma}_diff_stdev{n_z}'] = df[f'adj_next_pred{n_sma}_diff'].rolling(window=n_z).std()
+    
+#     # calculate z-score for adj_close prophet prediction difference
+#     df[f'adj_next_pred{n_sma}_diff_z{n_z}'] = df.apply(lambda row: zscore(row[f'adj_next_pred{n_sma}_diff'], row[f'adj_next_pred{n_sma}_diff_mu{n_z}'], row[f'adj_next_pred{n_sma}_diff_stdev{n_z}']), axis=1, result_type='expand').copy()
+    
     #target column: direction: -1, 0, 1
     df['adj_close_pctc'] = df['adj_close'].pct_change(fill_method=None)
     #     mean = df['adj_close_pctc'].mean()
@@ -254,7 +318,8 @@ def transform(symbol, interval):
         df[column] = df[column].astype('category')
     
     # clustering... select columns ending with 'z##'
-    z_columns = ['ac_z5', 'ac_z7', 'ac_z7', f'top_z{n_z}', f'body_z{n_z}', f'bottom_z{n_z}', f'vol_z{n_z}', f'pct_gap_up_down_z{n_z}', f'kma_sma{n_sma}_diff_z{n_z}', f'sma_short_diff_z{n_z}', f'sma_long_diff_z{n_z}']
+    z_columns = ['ac_z5', 'ac_z7', 'ac_z7', f'top_z{n_z}', f'body_z{n_z}', f'bottom_z{n_z}', f'vol_z{n_z}', f'pct_gap_up_down_z{n_z}', f'kma_sma{n_sma}_diff_z{n_z}', f'sma_short_diff_z{n_z}', f'sma_long_diff_z{n_z}', # f'adj_next_pred{n_sma}_diff_z{n_z}'
+                ]
     
     # drop nulls for kmeans fit
     data_z = df[z_columns].dropna() 
@@ -278,6 +343,7 @@ def transform(symbol, interval):
         f'kma_sma{n_sma}_diff_z{n_z}',
         f'sma_short_diff_z{n_z}',
         f'sma_long_diff_z{n_z}',
+        # f'adj_next_pred{n_sma}_diff_stdev{n_z}',
         'day_of_month',
         'day_of_week',
         'hour_of_day',
