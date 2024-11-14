@@ -47,7 +47,7 @@ os.environ["CMDSTANPY_SILENT"] = "1"
 
 # Set the number of threads to use
 os.environ['STAN_BACKEND'] = 'CMDSTANPY'  # Ensure the correct backend
-os.environ['STAN_NUM_THREADS'] = '3'  # Number of cores
+os.environ['STAN_NUM_THREADS'] = '4'  # Number of cores
 
 
 
