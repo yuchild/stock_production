@@ -63,9 +63,9 @@ def download(symbol, interval):
     stock = Ticker(symbol)
     
     if interval in {'5m','15m','30m','1h',}:
-        interval_period_map = {'5m':58,
-                               '15m':58,
-                               '30m':58,
+        interval_period_map = {'5m':55,
+                               '15m':55,
+                               '30m':55,
                                '1h':728,
                               }
         today = datetime.today().date()
