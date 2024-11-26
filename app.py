@@ -1,6 +1,6 @@
 import yfinance as yf
 import streamlit as st
-import pandas as pd
+import fireducks.pandas as pd
 import plotly.express as px
 
 from src.modules import dl_tf_pd, load
