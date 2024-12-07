@@ -166,8 +166,8 @@ def transform(symbol, interval):
         n_sma = 23
         n_z = 5
     elif interval in {'1mo'}:
-        n_sma = 19
-        n_z = 9
+        n_sma = 29
+        n_z = 17
     else:
         n_sma = 27
         n_z = 11
