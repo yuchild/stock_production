@@ -101,6 +101,13 @@ def load(symbol, interval):
 def load_model_df(symbol, interval):
     return pd.read_pickle(f'./data_transformed/{symbol}_{interval}_model_df.pkl')
 
+#########################################
+# functions for use to train lstm model #
+#########################################
+
+
+
+
 ###########################################
 # functions for use to transform features #
 ###########################################
