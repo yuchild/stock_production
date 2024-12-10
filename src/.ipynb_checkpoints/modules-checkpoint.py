@@ -29,6 +29,16 @@ from prophet import Prophet
 
 import logging
 
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.callbacks import EarlyStopping
+import tensorflow as tf
+
+import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppresses INFO and WARNING messages
+
 # Set logging level for cmdstanpy to WARNING to suppress INFO messages
 # logging.getLogger("cmdstanpy").setLevel(logging.WARNING)
 
@@ -38,15 +48,13 @@ logging.getLogger("cmdstanpy").setLevel(logging.CRITICAL)
 # from cmdstanpy import install_cmdstan
 # install_cmdstan()
 
-import os
-
 # Suppress cmdstanpy output
-os.environ["STAN_NUM_THREADS"] = "1"  # If using threading, limit to 1
-os.environ["CMDSTANPY_SILENT"] = "1"
+# os.environ["STAN_NUM_THREADS"] = "1"  # If using threading, limit to 1
+# os.environ["CMDSTANPY_SILENT"] = "1"
 
 # Set the number of threads to use
-os.environ['STAN_BACKEND'] = 'CMDSTANPY'  # Ensure the correct backend
-os.environ['STAN_NUM_THREADS'] = '4'  # Number of cores
+# os.environ['STAN_BACKEND'] = 'CMDSTANPY'  # Ensure the correct backend
+# os.environ['STAN_NUM_THREADS'] = '14'  # Number of cores
 
 
 
@@ -158,19 +166,19 @@ def transform(symbol, interval):
         download(symbol, interval)
         df = load(symbol,interval)
     
-    # sma and z-score windows
+    # sma and z-score windows, NOTE: need tweeking depending on security on day, week, and month
     if interval not in {'1d', '1wk', '1mo',}:
         n_sma = 21
         n_z = 7
     elif interval in {'1wk'}:
-        n_sma = 25
+        n_sma = 23
         n_z = 9
     elif interval in {'1mo'}:
-        n_sma = 23
+        n_sma = 21
         n_z = 11
-    else:
-        n_sma = 33
-        n_z = 9
+    else: # 1 day
+        n_sma = 43 
+        n_z = 15
     
     # Kalman filtering (noise reduction algorithm) 
     kf = KalmanFilter(transition_matrices = [1],
