@@ -179,13 +179,13 @@ def transform(symbol, interval):
         n_z = 7
     elif interval in {'1wk'}:
         n_sma = 23
-        n_z = 9
-    elif interval in {'1mo'}:
-        n_sma = 21
         n_z = 11
+    elif interval in {'1mo'}:
+        n_sma = 19
+        n_z = 9
     else: # 1 day
-        n_sma = 43 
-        n_z = 15
+        n_sma = 41 
+        n_z = 13
     
     # Kalman filtering (noise reduction algorithm) 
     kf = KalmanFilter(transition_matrices = [1],
