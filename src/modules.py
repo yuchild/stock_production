@@ -36,26 +36,15 @@ from tensorflow.keras.callbacks import EarlyStopping
 import tensorflow as tf
 
 import os
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppresses INFO and WARNING messages
+import tensorflow as tf
 
-# Set logging level for cmdstanpy to WARNING to suppress INFO messages
-# logging.getLogger("cmdstanpy").setLevel(logging.WARNING)
+# Set logging to suppress unwanted messages
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress INFO, WARNING, and ERROR logs
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'  # Disable oneDNN optimizations
 
-# Disable cmdstanpy logging
+import logging
 logging.getLogger("cmdstanpy").setLevel(logging.CRITICAL)
-
-# from cmdstanpy import install_cmdstan
-# install_cmdstan()
-
-# Suppress cmdstanpy output
-# os.environ["STAN_NUM_THREADS"] = "1"  # If using threading, limit to 1
-# os.environ["CMDSTANPY_SILENT"] = "1"
-
-# Set the number of threads to use
-# os.environ['STAN_BACKEND'] = 'CMDSTANPY'  # Ensure the correct backend
-# os.environ['STAN_NUM_THREADS'] = '14'  # Number of cores
-
+tf.get_logger().setLevel('ERROR')
 
 
 from datetime import datetime, timedelta
