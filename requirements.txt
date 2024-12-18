@@ -22,5 +22,6 @@ seaborn==0.13.2
 setuptools==75.6.0
 streamlit==1.39.0
 tensorflow[and-cuda]
+nvidia-cudnn-cu11==8.6.0.163
 xgboost==2.1.1
 yfinance==0.2.43
