@@ -30,10 +30,11 @@ from prophet import Prophet
 import logging
 
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.layers import Input, LSTM, Dense, Dropout
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.callbacks import EarlyStopping
-import tensorflow as tf
+
+from scikeras.wrappers import KerasClassifier
 
 import os
 import tensorflow as tf
@@ -169,9 +170,9 @@ def transform(symbol, interval):
     elif interval == '1h':
         n_sma, n_z, optimal_k = 29, 9, 3
     elif interval == '1d':
-        n_sma, n_z, optimal_k = 37, 11, 3
+        n_sma, n_z, optimal_k = 39, 11, 3
     elif interval == '1wk':
-        n_sma, n_z, optimal_k = 23, 11, 2
+        n_sma, n_z, optimal_k = 29, 11, 2
     else: # 1 month
         n_sma, n_z, optimal_k = 13, 9, 2
     
@@ -362,7 +363,24 @@ def transform(symbol, interval):
        ]
       ].to_pickle(f'./data_transformed/{symbol}_{interval}_model_df.pkl')
 
-    
+
+# config GPU
+gpus = tf.config.list_physical_devices('GPU')
+
+
+# LSTM Classifier
+def create_lstm_model(input_shape):
+    model = Sequential([
+        Input(shape=input_shape),  # Define the input shape here
+        LSTM(64, return_sequences=True),
+        Dropout(0.2),
+        LSTM(32),
+        Dropout(0.2),
+        Dense(1, activation='sigmoid')  # Assuming binary classification
+    ])
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    return model
+
 def model(symbol, interval):
     # Load data
     data = load_model_df(symbol, interval)
@@ -370,156 +388,184 @@ def model(symbol, interval):
     X = data.drop(columns=['direction'], axis=1)
     y = data['direction']
     
-    # Print column names to check for issues
-    # print("Columns in X before preprocessing:")
-    # print(X.columns)
-    
     # Remove duplicate columns
     X = X.loc[:, ~X.columns.duplicated()]
 
-    # Check if categorical_features are present in X
-    categorical_features = ['day_of_month', 'day_of_week', 'hour_of_day', 'cluster',]
+    # Handle missing categorical features
+    categorical_features = ['day_of_month', 'day_of_week', 'hour_of_day', 'cluster']
     missing_features = [col for col in categorical_features if col not in X.columns]
     if missing_features:
         print(f"Missing categorical features: {missing_features}")
 
-    # Make categorical transformer
+    # Preprocessor
     categorical_transformer = Pipeline(steps=[
-        ('onehot', OneHotEncoder(handle_unknown='ignore',sparse_output=False))
+        ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
     ])
-   
     preprocessor = ColumnTransformer(
         transformers=[
             ('cat', categorical_transformer, categorical_features)
         ],
-        remainder='passthrough'  # This will include all other columns in the transformed output
+        remainder='passthrough'
     )
-    
-    # Define your models
-    models = {
-        'XGBoost': XGBClassifier(random_state=42, n_jobs=-1, learning_rate=0.06, max_depth=4, n_estimators=175),
-        'GradientBoosting': GradientBoostingClassifier(random_state=42, learning_rate=0.11, max_depth=5, n_estimators=83, validation_fraction=0.09, n_iter_no_change=17,subsample=0.8,max_features='sqrt'),
-        'RandomForest': RandomForestClassifier(random_state=42, n_jobs=-1, max_depth=12, min_samples_split=9, n_estimators=200),
-        # 'LightGBM': LGBMClassifier(random_state=42,force_col_wise=True),
-        'KNN': KNeighborsClassifier(n_neighbors=8, p=1, weights='uniform')
-    }
 
-    
-    # Create a pipeline that first preprocesses the data and then trains the model
-    pipelines = {}
-    for model_name, model in models.items():
-        pipelines[model_name] = Pipeline(steps=[('preprocessor', preprocessor),
-                                                ('classifier', model)])
-    
-    #     X_validation_dfs = {}
-    #     y_validation_series = {}
-    models = {}
-    classification_reports = {}
-    
-    
-    # Create a function to get the column names after transformation
-    def get_feature_names_out(column_transformer):
+    # Define helper to extract feature names
+    def get_feature_names_out(preprocessor):
         feature_names = []
-        for name, transformer, columns in column_transformer.transformers_:
-            if hasattr(transformer, 'get_feature_names_out'):
-                feature_names.extend(transformer.get_feature_names_out())
+        for name, transformer, columns in preprocessor.transformers_:
+            if transformer == "drop" or transformer is None:
+                continue
+            if hasattr(transformer, "get_feature_names_out"):
+                try:
+                    # Pass correct input features for OneHotEncoder
+                    names = transformer.get_feature_names_out()
+                except ValueError:
+                    # Fallback to the column names if there's a mismatch
+                    names = columns
             else:
-                feature_names.extend(columns)
+                # Passthrough case
+                names = columns
+            feature_names.extend(names)
         return feature_names
 
-    for model_name, pipeline in pipelines.items():
-        # Apply the pipeline's preprocessor to the data
-        X_transformed = pipeline.named_steps['preprocessor'].fit_transform(X)
-
-        # Get feature names after transformation
-        feature_names = get_feature_names_out(pipeline.named_steps['preprocessor'])
-
-        # Convert the sparse matrix to a dense array and then to a DataFrame with proper column names
-        X_transformed = pd.DataFrame(X_transformed, columns=feature_names)
-
-        # Store current prediction data 
-        curr_prediction = X_transformed.iloc[-1].copy()
-
-        # Drop last row, model can't see this because it is used for prediction
-        X_transformed = X_transformed.iloc[:-1]
-
-        # Now perform train_test_split on the transformed data
-        X_train, X_test, y_train, y_test = train_test_split(X_transformed, y[:-1], test_size=0.2, random_state=42, stratify=y[:-1])
         
-        # Fit and evaluate the model
-        model = pipeline.named_steps['classifier']
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
+    # Transform data
+    X_transformed = preprocessor.fit_transform(X)
+    feature_names = get_feature_names_out(preprocessor)  # Get feature names
+    X_transformed = pd.DataFrame(X_transformed, columns=feature_names)  # Add feature names
 
-        # store model in models dictionary
-        models[model_name] = model
-
-        # Evaluate the model
-        # print(f"Model: {model.__class__.__name__}")
-        # print(classification_report(y_test, y_pred, zero_division=0))
-        
-        classification_reports[model.__class__.__name__] = classification_report(y_test, y_pred, zero_division=0, output_dict=True)
+    # Define models
+    models = {
+        'XGBoost': XGBClassifier(random_state=42, n_jobs=-1, learning_rate=0.06, max_depth=4, n_estimators=175),
+        'GradientBoosting': GradientBoostingClassifier(random_state=42, learning_rate=0.11, max_depth=5, n_estimators=83),
+        'RandomForest': RandomForestClassifier(random_state=42, n_jobs=-1, max_depth=12, min_samples_split=9, n_estimators=200),
+        'KNN': KNeighborsClassifier(n_neighbors=8, p=1, weights='uniform'),
+        'LSTM': KerasClassifier(model=create_lstm_model,
+                                input_shape=(1, X_transformed.shape[1]),  # (timesteps, features)
+                                epochs=20,
+                                batch_size=32,
+                                verbose=0
+        ),
+    }
     
-    return curr_prediction, models, feature_names, classification_reports
+    # Train and evaluate models
+    fitted_models = {}
+    classification_reports = {}
+    
+    for model_name, model in models.items():
+        if model_name == 'LSTM':
+            X_reshaped = X_transformed.to_numpy().reshape((X_transformed.shape[0], 1, X_transformed.shape[1]))
+            X_train, X_test, y_train, y_test = train_test_split(X_reshaped, y, test_size=0.2, random_state=42, stratify=y)
+            model.fit(X_train, y_train)
+            y_pred = (model.predict(X_test) > 0.5).astype(int)
+        else:
+            X_train, X_test, y_train, y_test = train_test_split(X_transformed, y, test_size=0.2, random_state=42, stratify=y)
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+    
+        # Store results
+        fitted_models[model_name] = model
+        classification_reports[model_name] = classification_report(y_test, y_pred, zero_division=0, output_dict=True)
+    
+    # Current prediction (last row of transformed data)
+    if 'LSTM' in models:
+        curr_prediction = X_reshaped[-1:]  # Already in 3D format: (1, timesteps, features)
+    else:
+        curr_prediction = X_transformed.iloc[-1:].to_numpy()  # Convert to 2D for other models
+
+    return curr_prediction, fitted_models, feature_names, classification_reports
 
 
 def make_prediction(models, curr_prediction, feature_names):
-    # Ensure curr_prediction is a DataFrame with the correct feature names
-    curr_prediction_df = pd.DataFrame([curr_prediction], columns=feature_names)
-    
     predictions = {}
     prediction_probas = {}
-    
+
     for model_name, model in models.items():
-        # Make predictions using the reshaped and named DataFrame
-        prediction = model.predict(curr_prediction_df)
-        predictions[model_name] = prediction[0]
-        prediction_probas[model_name] = model.predict_proba(curr_prediction_df)
-    
+        if model_name == 'LSTM':
+            # LSTM expects 3D input
+            if len(curr_prediction.shape) == 3:  # Already 3D
+                X_lstm = curr_prediction
+            else:
+                # Reshape to 3D: (1, timesteps, features)
+                X_lstm = curr_prediction.reshape((1, 1, curr_prediction.shape[0]))
+            predictions[model_name] = (model.predict(X_lstm) > 0.5).astype(int).flatten()
+            # Simulate probabilities for LSTM
+            prediction_probas[model_name] = [0.0, float(predictions[model_name][0]), 1 - float(predictions[model_name][0])]
+        else:
+            # Ensure curr_prediction is a DataFrame with correct feature names for other models
+            curr_prediction_flattened = curr_prediction.flatten()
+            curr_prediction_df = pd.DataFrame([curr_prediction_flattened], columns=feature_names)
+            predictions[model_name] = model.predict(curr_prediction_df)
+            if hasattr(model, "predict_proba"):
+                probas = model.predict_proba(curr_prediction_df)[0]
+                # Map probabilities to 'static', 'up', and 'down'
+                prediction_probas[model_name] = [probas[0], probas[1], probas[2]] if len(probas) == 3 else [None, None, None]
+            else:
+                # Default probability structure if predict_proba is not supported
+                prediction_probas[model_name] = [None, None, None]
+
     return predictions, prediction_probas
 
 
 def predictions_summary(predictions, prediction_probas, classification_reports):
-    model_map = {'XGBoost':'XGBClassifier', 
-                 'GradientBoosting':'GradientBoostingClassifier', 
-                 'RandomForest':'RandomForestClassifier', 
-                 'KNN':'KNeighborsClassifier',
-                }
+    prediction_map = {0: 'static', 1: 'up', 2: 'down'}
 
-    prediction_map = {0: 'static',
-                      1: 'up',
-                      2: 'down',
-                     }
-    
     prediction_str = []
     precision = []
     recall = []
     f1 = []
     support = []
+    prob_up = []
+    prob_static = []
+    prob_down = []
 
     for model, prediction in predictions.items():
-        prediction_str.append(prediction_map[prediction])
-        precision.append(classification_reports[model_map[model]][str(prediction)]['precision'])
-        recall.append(classification_reports[model_map[model]][str(prediction)]['recall'])
-        f1.append(classification_reports[model_map[model]][str(prediction)]['f1-score'])
-        support.append([classification_reports[model_map[model]]['1']['support'],
-                        classification_reports[model_map[model]]['0']['support'],
-                        classification_reports[model_map[model]]['2']['support'],
-                       ]
-                      )
+        # Convert prediction to scalar if needed
+        if isinstance(prediction, np.ndarray) and prediction.size == 1:
+            prediction = prediction.item()  # Extract scalar from array
+
+        # Ensure classification_reports contains the model
+        if model not in classification_reports:
+            raise KeyError(f"Model '{model}' is not in classification_reports.")
         
-    return pd.DataFrame({'model': predictions.keys(),
-                         'prediction': prediction_str,
-                         'kelly_1:2.5': kelly_c(precision), # kelly_c(np.max(np.array(list(prediction_probas.values())).T, axis=0))[0],
-                         'prob_up': np.array(list(prediction_probas.values())).T[1][0],
-                         'prob_static': np.array(list(prediction_probas.values())).T[0][0],
-                         'prob_down': np.array(list(prediction_probas.values())).T[2][0],
-                         'precision': precision,
-                         'recall': recall,
-                         'f1': f1,
-                         'support': support,
-                        }
-                       )
+        # Append prediction mapping
+        prediction_str.append(prediction_map[prediction])
+
+        # Append classification metrics
+        precision.append(classification_reports[model][str(prediction)]['precision'])
+        recall.append(classification_reports[model][str(prediction)]['recall'])
+        f1.append(classification_reports[model][str(prediction)]['f1-score'])
+        support.append([
+            classification_reports[model]['1']['support'],
+            classification_reports[model]['0']['support'],
+            classification_reports[model]['2']['support'],
+        ])
+
+        # Extract prediction probabilities, ensuring consistency
+        probas = prediction_probas.get(model, [])
+        if len(probas) == 3:  # Ensure three probability outputs for up, static, down
+            prob_up.append(probas[1])
+            prob_static.append(probas[0])
+            prob_down.append(probas[2])
+        else:
+            prob_up.append(None)
+            prob_static.append(None)
+            prob_down.append(None)
+
+    # Create DataFrame
+    return pd.DataFrame({
+        'model': list(predictions.keys()),
+        'prediction': prediction_str,
+        'kelly_1:2.5': kelly_c(precision),  # Calculate Kelly Criterion
+        'prob_up': prob_up,
+        'prob_static': prob_static,
+        'prob_down': prob_down,
+        'precision': precision,
+        'recall': recall,
+        'f1': f1,
+        'support': support,
+    })
+
+
 
 def dl_tf_pd(symbol, interval, skip_dl=False):
     # Define Eastern Time Zone
