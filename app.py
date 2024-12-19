@@ -17,6 +17,8 @@ For example, if you select a 5-minute interval at 10:14 AM EST, the model will p
 
 To maximize prediction accuracy, run the model as close to the end of the current interval as possible, using the most up-to-date information.
 
+Kelley_1:2.5 means that for any win the rate is 2.5 times the loss. So if you plan on loosing $100, then the win has to be $250 on the trade.
+
 Note: The model predicts stock movement (up, static, or down) in the next interval, not the exact price. For optimal analysis, use a candlestick chart along with the ATR (Average True Range) indicator available on most charting platforms to estimate the potential movement range.
   
 

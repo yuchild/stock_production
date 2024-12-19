@@ -30,7 +30,7 @@ from prophet import Prophet
 import logging
 
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Input, LSTM, Dense, Dropout
+from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, BatchNormalization
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.callbacks import EarlyStopping
 
@@ -50,6 +50,10 @@ tf.get_logger().setLevel('ERROR')
 
 from datetime import datetime, timedelta
 import pytz
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 ################################################
 # functions for downloading and loading tables #
@@ -369,17 +373,29 @@ gpus = tf.config.list_physical_devices('GPU')
 
 
 # LSTM Classifier
-def create_lstm_model(input_shape):
+from tensorflow.keras.layers import Conv1D, MaxPooling1D
+
+def create_cnn_lstm_model(input_shape):
+    """
+    Updated CNN-LSTM model to fix kernel size and improve performance.
+    """
     model = Sequential([
-        Input(shape=input_shape),  # Define the input shape here
-        LSTM(64, return_sequences=True),
+        Input(shape=input_shape),
+        Conv1D(64, kernel_size=1, activation='relu'),  # Adjusted kernel size
+        MaxPooling1D(pool_size=1),  # Pooling over 1 timestep
+        LSTM(128, return_sequences=True, activation='tanh'),
+        Dropout(0.4),
+        LSTM(64, activation='tanh'),
+        Dropout(0.4),
+        Dense(32, activation='relu'),
         Dropout(0.2),
-        LSTM(32),
-        Dropout(0.2),
-        Dense(1, activation='sigmoid')  # Assuming binary classification
+        Dense(1, activation='sigmoid')  # Binary classification
     ])
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer='adam', 
+                  loss='binary_crossentropy', 
+                  metrics=['Precision', 'Recall', 'accuracy'])
     return model
+
 
 def model(symbol, interval):
     # Load data
@@ -439,9 +455,9 @@ def model(symbol, interval):
         'GradientBoosting': GradientBoostingClassifier(random_state=42, learning_rate=0.11, max_depth=5, n_estimators=83),
         'RandomForest': RandomForestClassifier(random_state=42, n_jobs=-1, max_depth=12, min_samples_split=9, n_estimators=200),
         'KNN': KNeighborsClassifier(n_neighbors=8, p=1, weights='uniform'),
-        'LSTM': KerasClassifier(model=create_lstm_model,
+        'LSTM': KerasClassifier(model=create_cnn_lstm_model,
                                 input_shape=(1, X_transformed.shape[1]),  # (timesteps, features)
-                                epochs=20,
+                                epochs=15,
                                 batch_size=32,
                                 verbose=0
         ),
@@ -591,25 +607,23 @@ def dl_tf_pd(symbol, interval, skip_dl=False):
         predictions, prediction_probas = make_prediction(models, curr_prediction, feature_names)
         return time_stamp, predictions_summary(predictions, prediction_probas, classification_reports)
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 def predictions(symbol):
     symbol = symbol.upper()
-    intervals = ['5m',
-                 '15m',
-                 '1h',
-                 '1d',
-                 '1wk',
-                 '1mo',
-                ]
+    intervals = ['5m', '15m', '1h', '1d', '1wk', '1mo']
 
     for interval in intervals:
-
-        time_stamp, summary_table = dl_tf_pd(symbol, interval, skip_dl=False) # skip_dl=True on redo's
-        print(f'{symbol} {interval} Interval Timestamp: {time_stamp} ')
+        time_stamp, summary_table = dl_tf_pd(symbol, interval, skip_dl=False)  # skip_dl=True on redo's
+        print(f'{symbol} {interval} Interval Timestamp: {time_stamp}')
+        
+        # Display the summary table
         col_headers = summary_table.model.tolist()
-        col_headers
         summary_table_transposed = summary_table.T.iloc[1:]
         summary_table_transposed.columns = col_headers
         display(summary_table_transposed)
+
 
 if __name__ == '__main__':
     ...
