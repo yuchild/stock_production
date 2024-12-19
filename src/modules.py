@@ -163,18 +163,18 @@ def transform(symbol, interval):
         df = load(symbol,interval)
     
     # sma and z-score windows, NOTE: need tweeking depending on security on day, week, and month
-    if interval not in {'1d', '1wk', '1mo',}:
-        n_sma = 21
-        n_z = 7
-    elif interval in {'1wk'}:
-        n_sma = 23
-        n_z = 11
-    elif interval in {'1mo'}:
-        n_sma = 13
-        n_z = 5
-    else: # 1 day
-        n_sma = 23
-        n_z = 7
+    if interval == '5m':
+        n_sma, n_z = 29, 9
+    elif interval == '15m':
+        n_sma, n_z = 23, 9
+    elif interval == '1h':
+        n_sma, n_z = 29, 9
+    elif interval == '1d':
+        n_sma, n_z = 31, 11
+    elif interval == '1wk':
+        n_sma, n_z = 9, 5
+    else: # 1 month
+        n_sma, n_z = 7, 5
     
     # Kalman filtering (noise reduction algorithm) 
     kf = KalmanFilter(transition_matrices = [1],
@@ -333,7 +333,7 @@ def transform(symbol, interval):
     # drop nulls for kmeans fit
     data_z = df[z_columns].dropna() 
     
-    optimal_k = 2  # Replace with the optimal number from the elbow plot
+    optimal_k = 4  # Replace with the optimal number from the elbow plot
     kmeans = KMeans(n_clusters=optimal_k, random_state=42)
     data_z['cluster'] = kmeans.fit_predict(data_z)
     
@@ -341,17 +341,17 @@ def transform(symbol, interval):
     df['cluster'] = data_z['cluster']
     
     # save 1d file for model building
-    df[[f'top_z{n_z}',
-        f'body_z{n_z}',
-        f'bottom_z{n_z}',
-        f'vol_z{n_z}',
-        f'pct_gap_up_down_z{n_z}',
+    df[[f'top_stdev{n_z}',
+        f'body_stdev{n_z}',
+        f'bottom_stdev{n_z}',
+        f'vol_stdev{n_z}',
+        f'pct_gap_up_down_stdev{n_z}',
         'ac_z5',
         'ac_z7',
         'ac_z11',
-        f'kma_sma{n_sma}_diff_z{n_z}',
-        f'sma_short_diff_z{n_z}',
-        f'sma_long_diff_z{n_z}',
+        f'kma_sma{n_sma}_diff_stdev{n_z}',
+        f'sma_short_diff_stdev{n_z}',
+        f'sma_long_diff_stdev{n_z}',
         # f'adj_next_pred{n_sma}_diff_stdev{n_z}',
         'day_of_month',
         'day_of_week',
