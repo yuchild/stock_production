@@ -58,10 +58,9 @@ def download(symbol, interval):
     
     stock = Ticker(symbol)
     
-    if interval in {'5m','15m','30m','1h',}:
+    if interval in {'5m','15m','1h',}:
         interval_period_map = {'5m':58,
                                '15m':58,
-                               '30m':58,
                                '1h':728,
                               }
         today = datetime.today().date()
@@ -162,19 +161,19 @@ def transform(symbol, interval):
         download(symbol, interval)
         df = load(symbol,interval)
     
-    # sma and z-score windows, NOTE: need tweeking depending on security on day, week, and month
+    # sma, z-score, and optimal_k (KNmeans) windows, NOTE: need tweeking depending on security on day, week, and month
     if interval == '5m':
-        n_sma, n_z = 29, 9
+        n_sma, n_z, optimal_k = 29, 9, 3
     elif interval == '15m':
-        n_sma, n_z = 23, 9
+        n_sma, n_z, optimal_k = 21, 7, 3
     elif interval == '1h':
-        n_sma, n_z = 29, 9
+        n_sma, n_z, optimal_k = 29, 9, 3
     elif interval == '1d':
-        n_sma, n_z = 31, 11
+        n_sma, n_z, optimal_k = 37, 11, 3
     elif interval == '1wk':
-        n_sma, n_z = 9, 5
+        n_sma, n_z, optimal_k = 23, 11, 2
     else: # 1 month
-        n_sma, n_z = 7, 5
+        n_sma, n_z, optimal_k = 13, 9, 2
     
     # Kalman filtering (noise reduction algorithm) 
     kf = KalmanFilter(transition_matrices = [1],
@@ -332,8 +331,10 @@ def transform(symbol, interval):
     
     # drop nulls for kmeans fit
     data_z = df[z_columns].dropna() 
+
+    # KMeans stratification
+    # optimal_k = 3  # Replace with the optimal number from the elbow plot
     
-    optimal_k = 4  # Replace with the optimal number from the elbow plot
     kmeans = KMeans(n_clusters=optimal_k, random_state=42)
     data_z['cluster'] = kmeans.fit_predict(data_z)
     
