@@ -130,20 +130,6 @@ def zscore(x, mu, stdev):
     else:
         return (x - mu) / stdev
 
-# DEPRECATED
-# direction calculation: 
-# def direction(pctc, mean, stdev):
-    
-#     pct_pos = mean + 0.43073 / 2 * stdev
-#     pct_neg = mean - 0.43073 / 2 * stdev
-    
-#     if pctc >= pct_pos:
-#         return 1
-#     elif pctc <= pct_neg:
-#         return 2
-#     else:
-#         return 0
-
 # compute kelly criterion
 def kelly_c(p, l=1, g=2.5):     
     return list(map(lambda x:(x / l - (1 - x) / g), p))
@@ -164,17 +150,17 @@ def transform(symbol, interval):
     
     # sma, z-score, and optimal_k (KNmeans) windows, NOTE: need tweeking depending on security on day, week, and month
     if interval == '5m':
-        n_sma, n_z, optimal_k = 29, 9, 3
+        n_sma, n_z, optimal_k = 40, 10, 3
     elif interval == '15m':
-        n_sma, n_z, optimal_k = 21, 7, 3
+        n_sma, n_z, optimal_k = 30, 7, 2
     elif interval == '1h':
-        n_sma, n_z, optimal_k = 29, 9, 3
+        n_sma, n_z, optimal_k = 40, 10, 3
     elif interval == '1d':
-        n_sma, n_z, optimal_k = 39, 11, 3
+        n_sma, n_z, optimal_k = 50, 7, 3
     elif interval == '1wk':
-        n_sma, n_z, optimal_k = 29, 11, 2
+        n_sma, n_z, optimal_k = 20, 10, 3
     else: # 1 month
-        n_sma, n_z, optimal_k = 13, 9, 2
+        n_sma, n_z, optimal_k = 10, 9, 2
     
     # Kalman filtering (noise reduction algorithm) 
     kf = KalmanFilter(transition_matrices = [1],
@@ -373,28 +359,55 @@ gpus = tf.config.list_physical_devices('GPU')
 
 
 # LSTM Classifier
-from tensorflow.keras.layers import Conv1D, MaxPooling1D
+# LSTM Classifier
+from tensorflow.keras.layers import Bidirectional, LSTM, Dropout, Dense, Input, BatchNormalization
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.initializers import HeNormal
+from tensorflow.keras.callbacks import EarlyStopping
 
-def create_cnn_lstm_model(input_shape):
+def create_bilstm_model(input_shape, learning_rate=0.003, dropout_rate=0.3):
     """
-    Updated CNN-LSTM model to fix kernel size and improve performance.
+    Enhanced Bidirectional LSTM model with Batch Normalization and fine-tuning options.
     """
     model = Sequential([
         Input(shape=input_shape),
-        Conv1D(64, kernel_size=1, activation='relu'),  # Adjusted kernel size
-        MaxPooling1D(pool_size=1),  # Pooling over 1 timestep
-        LSTM(128, return_sequences=True, activation='tanh'),
-        Dropout(0.4),
-        LSTM(64, activation='tanh'),
-        Dropout(0.4),
-        Dense(32, activation='relu'),
-        Dropout(0.2),
-        Dense(1, activation='sigmoid')  # Binary classification
+
+        # First Bidirectional LSTM Layer
+        Bidirectional(LSTM(64, return_sequences=True, activation='tanh')),  
+        BatchNormalization(),
+        Dropout(dropout_rate),
+
+        # Second Bidirectional LSTM Layer
+        Bidirectional(LSTM(32, return_sequences=True, activation='tanh')),
+        BatchNormalization(),
+        Dropout(dropout_rate),
+
+        # Third Bidirectional LSTM Layer
+        Bidirectional(LSTM(16, activation='tanh')),
+        BatchNormalization(),
+        Dropout(dropout_rate / 2),
+
+        # Dense Layers
+        Dense(16, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.01)),
+        Dense(6, activation='softmax', kernel_initializer=HeNormal()),
+        Dropout(dropout_rate / 2),
+
+        # Output Layer
+        Dense(3, activation='softmax')  # Multi-class classification
     ])
-    model.compile(optimizer='adam', 
-                  loss='binary_crossentropy', 
+
+    optimizer = Adam(learning_rate=learning_rate)
+    model.compile(optimizer=optimizer, 
+                  loss='categorical_crossentropy', 
                   metrics=['Precision', 'Recall', 'accuracy'])
     return model
+
+# Early stopping
+early_stopping = EarlyStopping(
+    monitor='val_loss', 
+    patience=10, 
+    restore_best_weights=True
+)
 
 
 ############
@@ -447,11 +460,14 @@ def model(symbol, interval):
             feature_names.extend(names)
         return feature_names
 
-        
     # Transform data
     X_transformed = preprocessor.fit_transform(X)
     feature_names = get_feature_names_out(preprocessor)  # Get feature names
     X_transformed = pd.DataFrame(X_transformed, columns=feature_names)  # Add feature names
+
+    # One-hot encode target labels for LSTM
+    from tensorflow.keras.utils import to_categorical
+    y_encoded = to_categorical(y, num_classes=3)
 
     # Define models
     models = {
@@ -459,12 +475,13 @@ def model(symbol, interval):
         'GradientBoosting': GradientBoostingClassifier(random_state=42, learning_rate=0.11, max_depth=5, n_estimators=83),
         'RandomForest': RandomForestClassifier(random_state=42, n_jobs=-1, max_depth=12, min_samples_split=9, n_estimators=200),
         'KNN': KNeighborsClassifier(n_neighbors=8, p=1, weights='uniform'),
-        'LSTM': KerasClassifier(model=create_cnn_lstm_model,
+        'LSTM': KerasClassifier(model=create_bilstm_model,
                                 input_shape=(1, X_transformed.shape[1]),  # (timesteps, features)
-                                epochs=15,
+                                epochs=50,
                                 batch_size=32,
-                                verbose=0
-        ),
+                                callbacks=[early_stopping], # apply early stopping
+                                verbose=0,
+                               ),
     }
     
     # Train and evaluate models
@@ -472,19 +489,38 @@ def model(symbol, interval):
     classification_reports = {}
     
     for model_name, model in models.items():
-        if model_name == 'LSTM':
+        if model_name == 'LSTM':            
+            # Reshape input for LSTM
             X_reshaped = X_transformed.to_numpy().reshape((X_transformed.shape[0], 1, X_transformed.shape[1]))
-            X_train, X_test, y_train, y_test = train_test_split(X_reshaped, y, test_size=0.2, random_state=42, stratify=y)
-            model.fit(X_train, y_train)
-            y_pred = (model.predict(X_test) > 0.5).astype(int)
+            X_train, X_test, y_train, y_test = train_test_split(X_reshaped, y_encoded, test_size=0.2, random_state=42, stratify=y)
+
+            # Split training data further into training and validation sets
+            X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42, stratify=y_train)
+            
+            # Train LSTM
+            model.fit(X_train,
+                       y_train,
+                       validation_data=(X_val, y_val),  # Use validation data
+                       epochs=50,
+                       batch_size=32,
+                       callbacks=[early_stopping],  # Early stopping callback
+                      )
+
+            # Predict probabilities and decode predictions
+            y_pred_proba = model.predict(X_test)
+            y_pred = np.argmax(y_pred_proba, axis=-1)
+            y_test_decoded = np.argmax(y_test, axis=1)
+            
         else:
+            # Train other models
             X_train, X_test, y_train, y_test = train_test_split(X_transformed, y, test_size=0.2, random_state=42, stratify=y)
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
     
         # Store results
         fitted_models[model_name] = model
-        classification_reports[model_name] = classification_report(y_test, y_pred, zero_division=0, output_dict=True)
+        classification_reports[model_name] = classification_report(y_test_decoded if model_name == 'LSTM' else y_test, 
+                                                                   y_pred, zero_division=0, output_dict=True)
     
     # Current prediction (last row of transformed data)
     if 'LSTM' in models:
@@ -492,9 +528,11 @@ def model(symbol, interval):
     else:
         curr_prediction = X_transformed.iloc[-1:].to_numpy()  # Convert to 2D for other models
 
+    # Return predictions in raw format for summary processing
     return curr_prediction, fitted_models, feature_names, classification_reports
 
-#########@@###
+
+##############
 # predicting #
 ##############
 
@@ -510,9 +548,14 @@ def make_prediction(models, curr_prediction, feature_names):
             else:
                 # Reshape to 3D: (1, timesteps, features)
                 X_lstm = curr_prediction.reshape((1, 1, curr_prediction.shape[0]))
-            predictions[model_name] = (model.predict(X_lstm) > 0.5).astype(int).flatten()
-            # Simulate probabilities for LSTM
-            prediction_probas[model_name] = [0.0, float(predictions[model_name][0]), 1 - float(predictions[model_name][0])]
+            # Predict probabilities
+            y_pred_proba = model.predict(X_lstm)
+            
+            # Get prediction based on argmax
+            predictions[model_name] = np.argmax(y_pred_proba, axis=-1).flatten()
+            
+            # Map probabilities directly from the model output
+            prediction_probas[model_name] = y_pred_proba[0].tolist()
         else:
             # Ensure curr_prediction is a DataFrame with correct feature names for other models
             curr_prediction_flattened = curr_prediction.flatten()
@@ -529,7 +572,7 @@ def make_prediction(models, curr_prediction, feature_names):
     return predictions, prediction_probas
 
 
-#########@@###########
+######################
 # prediction summary #
 ######################
 
