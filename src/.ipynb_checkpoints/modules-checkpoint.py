@@ -373,22 +373,22 @@ def create_bilstm_model(input_shape, learning_rate=0.003, dropout_rate=0.3):
         Input(shape=input_shape),
 
         # First Bidirectional LSTM Layer
-        Bidirectional(LSTM(64, return_sequences=True, activation='tanh')),  
+        Bidirectional(LSTM(120, return_sequences=True, activation='tanh')),  
         BatchNormalization(),
         Dropout(dropout_rate),
 
         # Second Bidirectional LSTM Layer
-        Bidirectional(LSTM(32, return_sequences=True, activation='tanh')),
+        Bidirectional(LSTM(60, return_sequences=True, activation='tanh')),
         BatchNormalization(),
         Dropout(dropout_rate),
 
         # Third Bidirectional LSTM Layer
-        Bidirectional(LSTM(16, activation='tanh')),
+        Bidirectional(LSTM(30, activation='tanh')),
         BatchNormalization(),
         Dropout(dropout_rate / 2),
 
         # Dense Layers
-        Dense(16, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.01)),
+        Dense(30, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.01)),
         Dense(6, activation='softmax', kernel_initializer=HeNormal()),
         Dropout(dropout_rate / 2),
 
