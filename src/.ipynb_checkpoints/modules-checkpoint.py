@@ -30,9 +30,10 @@ from prophet import Prophet
 import logging
 
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, BatchNormalization
+from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, BatchNormalization, Bidirectional
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.callbacks import EarlyStopping
+from sklearn.utils.class_weight import compute_class_weight
 
 from scikeras.wrappers import KerasClassifier
 
@@ -94,12 +95,6 @@ def load(symbol, interval):
 def load_model_df(symbol, interval):
     return pd.read_pickle(f'./data_transformed/{symbol}_{interval}_model_df.pkl')
 
-#########################################
-# functions for use to train lstm model #
-#########################################
-
-
-
 
 ###########################################
 # functions for use to transform features #
@@ -152,6 +147,7 @@ def zscore(x, mu, stdev):
 # compute kelly criterion
 def kelly_c(p, l=1, g=2.5):     
     return list(map(lambda x:(x / l - (1 - x) / g), p))
+
 
 #################################
 # functions for modeling output #
@@ -368,6 +364,10 @@ def transform(symbol, interval):
       ].to_pickle(f'./data_transformed/{symbol}_{interval}_model_df.pkl')
 
 
+#########################################
+# functions for use to train lstm model #
+#########################################
+
 # config GPU
 gpus = tf.config.list_physical_devices('GPU')
 
@@ -396,6 +396,10 @@ def create_cnn_lstm_model(input_shape):
                   metrics=['Precision', 'Recall', 'accuracy'])
     return model
 
+
+############
+# modeling #
+############
 
 def model(symbol, interval):
     # Load data
@@ -490,6 +494,9 @@ def model(symbol, interval):
 
     return curr_prediction, fitted_models, feature_names, classification_reports
 
+#########@@###
+# predicting #
+##############
 
 def make_prediction(models, curr_prediction, feature_names):
     predictions = {}
@@ -521,6 +528,10 @@ def make_prediction(models, curr_prediction, feature_names):
 
     return predictions, prediction_probas
 
+
+#########@@###########
+# prediction summary #
+######################
 
 def predictions_summary(predictions, prediction_probas, classification_reports):
     prediction_map = {0: 'static', 1: 'up', 2: 'down'}
@@ -582,7 +593,6 @@ def predictions_summary(predictions, prediction_probas, classification_reports):
     })
 
 
-
 def dl_tf_pd(symbol, interval, skip_dl=False):
     # Define Eastern Time Zone
     eastern = pytz.timezone('US/Eastern')
@@ -607,8 +617,6 @@ def dl_tf_pd(symbol, interval, skip_dl=False):
         predictions, prediction_probas = make_prediction(models, curr_prediction, feature_names)
         return time_stamp, predictions_summary(predictions, prediction_probas, classification_reports)
 
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 def predictions(symbol):
     symbol = symbol.upper()
