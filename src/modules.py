@@ -156,7 +156,7 @@ def transform(symbol, interval):
     elif interval == '1h':
         n_sma, n_z, optimal_k = 40, 10, 3
     elif interval == '1d':
-        n_sma, n_z, optimal_k = 50, 7, 3
+        n_sma, n_z, optimal_k = 45, 10, 3
     elif interval == '1wk':
         n_sma, n_z, optimal_k = 20, 10, 3
     else: # 1 month
