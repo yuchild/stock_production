@@ -150,17 +150,17 @@ def transform(symbol, interval):
     
     # sma, z-score, and optimal_k (KNmeans) windows, NOTE: need tweeking depending on security on day, week, and month
     if interval == '5m':
-        n_sma, n_z, optimal_k = 40, 10, 3
+        n_sma, n_z, optimal_k = 100, 20, 2
     elif interval == '15m':
-        n_sma, n_z, optimal_k = 30, 7, 2
+        n_sma, n_z, optimal_k = 30, 7, 3
     elif interval == '1h':
-        n_sma, n_z, optimal_k = 40, 10, 3
+        n_sma, n_z, optimal_k = 50, 15, 2
     elif interval == '1d':
-        n_sma, n_z, optimal_k = 45, 10, 3
+        n_sma, n_z, optimal_k = 20, 7, 2
     elif interval == '1wk':
-        n_sma, n_z, optimal_k = 20, 10, 3
+        n_sma, n_z, optimal_k = 5, 5, 3
     else: # 1 month
-        n_sma, n_z, optimal_k = 10, 9, 2
+        n_sma, n_z, optimal_k = 3, 5, 3
     
     # Kalman filtering (noise reduction algorithm) 
     kf = KalmanFilter(transition_matrices = [1],
